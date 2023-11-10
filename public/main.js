@@ -4,7 +4,7 @@ const ctx = canvas.getContext('2d');
 const blocks = [];
 const pressedKeys = {};
 
-const gravity = 5;
+const gravity = 14;
 const fallSpeed = 1;
 const friction = 0.8;
 
@@ -14,9 +14,13 @@ canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 new Block(0, canvas.height / 2, canvas.width, canvas.height/2, 'green');
-new Block(50, canvas.height / 2 - 100, 100, 100, 'red');
+new Block(250, canvas.height / 2 - 50, 100, 50, 'red');
+new Block(450, canvas.height / 2 - 100, 100, 50, 'red');
+new Block(920, canvas.height / 2 - 200, 100, 50, 'red');
+new Block(350, canvas.height / 2 - 300, 200, 50, 'red');
+new Block(250, canvas.height / 2 - 499, 50, 200, 'red');
 
-const player = new Player(canvas.width / 2, canvas.height / 2 - 250);
+const player = new Player(canvas.width / 2, canvas.height / 2 - 450);
 
 let lastUpdate = Date.now();
 
@@ -25,9 +29,9 @@ function animate(){
   dt = (now - lastUpdate) / 1000;
   lastUpdate = now;
   drawBackGround();
+  drawBlocks();
   player.draw();
   player.update();
-  drawBlocks();
 
   requestAnimationFrame(animate);
 }
@@ -67,6 +71,12 @@ document.addEventListener('keyup', (e) =>{
 
 });
 
+document.addEventListener('mousedown', (e) => {
+  let x = e.clientX;
+  let y = e.clientY;
+  player.tp(x, y);
+});
+
 function approach(current, target, increase)
 {
 
@@ -77,4 +87,18 @@ function approach(current, target, increase)
   return Math.max(current - increase, target);
 }
 
+function rectCollision(a, b){
+  return a.pos.x < b.pos.x  + b.size.x && // Collision on Left of a and right of b
+         a.pos.x + a.size.x > b.pos.x  && // Collision on Right of a and left of b
+         a.pos.y < b.pos.y  + b.size.y && // Collision on Bottom of a and Top of b
+         a.pos.y + a.size.y > b.pos.y;    // Collision on Top of a and Bottom of b
+}
+
+function pointInRect(point, rect)
+{
+  return (point.x >= rect.pos.x &&
+          point.x <= rect.pos.x + rect.size.x &&
+          point.y >= rect.pos.y &&
+          point.y <= rect.pos.y + rect.size.y);
+}
 animate();
