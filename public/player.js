@@ -10,11 +10,13 @@ class Player{
         }
         this.color = getRandomColor();
         this.remainder = {x: 0, y: 0};
-        this.runAcceleration = 15;
+        this.runAcceleration = 10;
         this.runSpeed = 4;
-        this.runReduce = 30; 
+        this.runReduce = 22; 
         this.flyReduce = 12;    
         this.fallSpeed = 3.6;
+        this.fallSideAcceleration = 10;
+        this.directionChangeMult = 1.6;
         this.jumpSpeed = -5;
     }
     draw(){
@@ -23,14 +25,62 @@ class Player{
         ctx.rect(this.x, this.y, this.size.x, this.size.y);
         ctx.fill();
         ctx.closePath();
+        
+        // text
+        ctx.beginPath();
+        ctx.font = '20px Arial';
+        let text = 'You';
+        let textWidth = ctx.measureText(text).width;
+        ctx.fillText(text, this.x + (this.size.x - textWidth) / 2, this.y - 5);        
+        ctx.closePath();
     }
     update(){
         // physics 
-        
-        
-        // Friction
-        if(!pressedKeys['a'] &&
-        !pressedKeys['d']) {
+                
+
+        // movement
+        if (pressedKeys['w'] || pressedKeys[' ']){ // jump
+            let timeSinceGrouned = Date.now() - this.groundedTime;
+            if (this.grounded || timeSinceGrouned < 20){
+                this.vel.y = this.jumpSpeed;
+                // this.vel.x += this.solidSpeed.x;
+                // this.vel.y += this.solidSpeed.y;
+            }
+        }
+
+        if (pressedKeys['a'] && !pressedKeys['d']){ // left
+            let mult = 1;
+            if(this.vel.x > 0)
+            {
+                mult = this.directionChangeMult;
+            }
+            if (this.grounded){
+                this.vel.x = approach(this.vel.x, -this.runSpeed, this.runAcceleration * mult * dt);
+            }else{
+                this.vel.x = approach(this.vel.x, -this.runSpeed, this.fallSideAcceleration * mult * dt);
+            }
+        }
+
+        if (pressedKeys['d'] && !pressedKeys['a']){ // right
+            let mult = 1;
+            if(this.vel.x < 0)
+            {
+                mult = this.directionChangeMult;
+            }
+            if (this.grounded){
+                this.vel.x = approach(this.vel.x, this.runSpeed, this.runAcceleration  * mult * dt);
+            }else{
+                this.vel.x = approach(this.vel.x, this.runSpeed, this.fallSideAcceleration  * mult * dt);
+            }
+        }
+
+
+        // gravity
+        this.vel.y = approach(this.vel.y, this.fallSpeed, gravity * dt);
+
+
+         // Friction
+         if(!pressedKeys['a'] && !pressedKeys['d']) {
             if(this.grounded){
                 player.vel.x = approach(this.vel.x, 0, this.runReduce * dt);
             }
@@ -38,36 +88,6 @@ class Player{
                 player.vel.x = approach(player.vel.x, 0, this.flyReduce * dt);
             }
         }   
-
-        // movement
-        if (pressedKeys['w'] || pressedKeys[' ']){ // jump
-            if (this.grounded){
-                this.vel.y = this.jumpSpeed;
-                // this.vel.x += this.solidSpeed.x;
-                // this.vel.y += this.solidSpeed.y;
-                this.grounded = false;
-            }
-        }
-
-        if (pressedKeys['a']){ // left
-            if(this.vel.x > 0)
-            {
-                this.vel.x = 0;
-            }
-            this.vel.x = approach(this.vel.x, -this.runSpeed, this.runAcceleration * dt);
-        }
-
-        if (pressedKeys['d']){ // right
-            if(this.vel.x < 0)
-            {
-                this.vel.x = 0;
-            }
-            this.vel.x = approach(this.vel.x, this.runSpeed, this.runAcceleration * dt);
-        }
-
-
-        // gravity
-        this.vel.y = approach(this.vel.y, this.fallSpeed, gravity * dt);
 
         // execute movement
         
@@ -77,20 +97,11 @@ class Player{
         {
             this.remainder.x -= moveX;
             let moveSign = Math.sign(moveX);
-            let collisionHappened = false;
-            let playerRect = {
-                pos: {
-                    x: this.x,
-                    y: this.y,
-                },
-                size: {
-                    x: this.size.x,
-                    y: this.size.y
-                }
-            }
+            let collisionHappenedX = false;
+            let playerRect = getSolidRect(this);
     
             // Move the player in X until collision or moveX is exausted
-            while(moveX)
+            while(moveX != 0)
             {
                 // console.log(moveX)
                 playerRect.pos.x += moveSign;
@@ -100,38 +111,31 @@ class Player{
                 for(let solidIdx = 0; solidIdx < blocks.length; solidIdx++)
                 {
                     let solid = blocks[solidIdx];
-                    let solidRect = {
-                        pos: {
-                            x: solid.x,
-                            y: solid.y,
-                        },
-                        size: {
-                            x: solid.size.x,
-                            y: solid.size.y
-                        }
+                    let solidRect = getSolidRect(solid);
+                    if(rectCollision(solidRect, playerRect)){
+                        collisionHappenedX = true;
+                        break;
                     }
-                    if(rectCollision(playerRect, solidRect)){
-                        this.vel.x = 0;
-                        return;
-                    }
+
                 }  
+                if (!collisionHappenedX){
+                    this.x += moveSign;
+                    moveX -= moveSign;
+                }else{
+                    this.vel.x = 0;
+                    this.remainder.x = 0;
+                    break;
+                }
                 // Move the Player
                 // console.log(moveSign)
-                this.x += moveSign;
-                moveX -= moveSign;
             }
-        }      
+        }
+        if (this.grounded){
+            this.grounded = false;
+            this.groundedTime = Date.now();      
+        }
         // Move Y
-            let playerRect  = {
-                pos: {
-                    x: this.x,
-                    y: this.y,
-                },
-                size: {
-                    x: this.size.x,
-                    y: this.size.y
-                }
-            }
+            let playerRect = getSolidRect(this);
       
             this.remainder.y += this.vel.y;
             let moveY = Math.round(this.remainder.y);
@@ -139,27 +143,18 @@ class Player{
             {
                 this.remainder.y -= moveY;
                 let moveSign = Math.sign(moveY);
-                let collisionHappened = false;
+                let collisionHappenedY = false;
       
              // Move the player in Y until collision or moveY is exausted
                 while(moveY)
                 {
-                  playerRect.pos.y += moveSign;
+                    playerRect.pos.y += moveSign;
       
-                  // Test collision against Solids
+                    // Test collision against Solids
                     for(let solidIdx = 0; solidIdx < blocks.length; solidIdx++)
                     {
                         let solid = blocks[solidIdx];
-                        let solidRect = {
-                            pos: {
-                                x: solid.x,
-                                y: solid.y,
-                            },
-                            size: {
-                                x: solid.size.x,
-                                y: solid.size.y
-                            }
-                        }      
+                        let solidRect = getSolidRect(solid);  
                         if(rectCollision(playerRect, solidRect)) {
                         // Moving down/falling
                             if(this.vel.y > 0)
@@ -167,20 +162,38 @@ class Player{
                                 this.grounded = true;
                             }
       
-                            this.vel.y = 0;
-                            return;
+                            collisionHappenedY = true;
+                            break;
                         }
                     }
       
-                // Move the Player
-                  this.y += moveSign;
-                  moveY -= moveSign;
+                    // Move the Player
+                    if (!collisionHappenedY){
+                        this.y += moveSign;
+                        moveY -= moveSign;
+                    }else{
+                        if (moveSign < 0){
+                            this.vel.y = 0;
+                        }
+                        break;
+                    }
                 }
-            }
-            
+            }     
     }
     tp(x, y){
         this.x = x - this.size.x / 2;
         this.y = y - this.size.y / 2;
+    }
+}
+function getSolidRect(solid){
+    return {
+        pos: {
+            x: solid.x,
+            y: solid.y,
+        },
+        size: {
+            x: solid.size.x,
+            y: solid.size.y
+        }
     }
 }
