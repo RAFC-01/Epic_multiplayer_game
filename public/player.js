@@ -1,5 +1,6 @@
-class Player{
+class Player extends CharacterEntity{
     constructor(x, y){
+        super();
         this.x = x;
         this.y = y;
         this.vel = {x: 0, y: 0};
@@ -18,21 +19,18 @@ class Player{
         this.fallSideAcceleration = 10;
         this.directionChangeMult = 1.6;
         this.jumpSpeed = -5;
-    }
-    draw(){
-        ctx.beginPath();
-        ctx.fillStyle = this.color;
-        ctx.rect(this.x, this.y, this.size.x, this.size.y);
-        ctx.fill();
-        ctx.closePath();
-        
-        // text
-        ctx.beginPath();
-        ctx.font = '20px Arial';
-        let text = 'You';
-        let textWidth = ctx.measureText(text).width;
-        ctx.fillText(text, this.x + (this.size.x - textWidth) / 2, this.y - 5);        
-        ctx.closePath();
+
+        this.weaponLoaded = false;
+        this.weapon = WEAPONS[this.weaponId];
+        this.weapon.img.onload = () => {
+            this.weapon.scale = WEAPONS[this.weaponId].scale ? WEAPONS[this.weaponId].scale : DEFAULT_SIZE_SCALE;
+            this.weapon.size = {
+                x: this.weapon.img.width / this.weapon.scale,
+                y: this.weapon.img.height / this.weapon.scale
+            }
+            this.gunImage = this.weapon.img;
+            this.weaponLoaded = true;
+        }
     }
     update(){
         // physics 

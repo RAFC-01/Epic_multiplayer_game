@@ -8,6 +8,7 @@ const server = http.createServer(app);
 const io = require('socket.io')(server);
 
 let playerList = [];
+let bullets = [];
 
 io.on('connection', client => {
   console.log('user connected '+client.id);
@@ -20,6 +21,14 @@ io.on('connection', client => {
 
     // console.log('update')
     if (read) io.emit('updatePlayers', playerList);
+  })
+
+  client.on('reload', ()=>{
+    io.emit('reloadPage');
+  });
+
+  client.on('pingNotify', (type) => {
+    io.emit('pingN', type);
   })
 
   client.on('disconnect', () => {
