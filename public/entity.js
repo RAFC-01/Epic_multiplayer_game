@@ -1,10 +1,11 @@
 class CharacterEntity{
     constructor(){
-        this.weaponId = 2;
+        this.weaponId = 1;
         
         this.hp = 10;
         this.maxHp = 10;
         this.lastShoot = 0;
+        this.groundedCooldown = 110;
     }
     drawWeapon() {
         // ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -30,7 +31,7 @@ class CharacterEntity{
         // ctx.fillText(Math.floor(degrees), this.x, this.y - 20);
     }
     shoot(){
-        if (!this.weaponLoaded || GAME_STATE != 'game') return;
+        if (GAME_STATE != 'game') return;
 
         let cooldown = WEAPONS[this.weaponId].cooldown ? WEAPONS[this.weaponId].cooldown : DEFAULT_WEAPON_COOLDOWN;
         let now = Date.now();
@@ -47,7 +48,6 @@ class CharacterEntity{
         let y = Math.sin(angle);
 
         let vector = {x, y};
-
         new Particle(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , vector, bulletSpeed, this.socketId, this.weaponId);
         shootBullet(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , vector, bulletSpeed, this.weaponId);
         this.lastShoot = Date.now();

@@ -1,6 +1,7 @@
 class Player extends CharacterEntity{
-    constructor(x, y){
+    constructor(x, y, name){
         super();
+        this.name = name ? name : 'Unknown';
         this.display = 'You';
         this.x = x;
         this.y = y;
@@ -16,23 +17,19 @@ class Player extends CharacterEntity{
         this.runSpeed = 4;
         this.runReduce = 22; 
         this.flyReduce = 12;    
-        this.fallSpeed = 3.6;
+        this.fallSpeed = 5.6;
         this.fallSideAcceleration = 10;
         this.directionChangeMult = 1.6;
         this.jumpSpeed = -5;
 
-        this.weaponLoaded = false;
         this.weapon = WEAPONS[this.weaponId];
-        this.weapon.img.onload = () => {
-            this.weapon.scale = WEAPONS[this.weaponId].scale ? WEAPONS[this.weaponId].scale : DEFAULT_SIZE_SCALE;
-            this.weapon.size = {
-                x: this.weapon.img.width / this.weapon.scale,
-                y: this.weapon.img.height / this.weapon.scale
-            }
-            this.gunImage = this.weapon.img;
-            this.weaponLoaded = true;
-
+        this.weapon.scale = WEAPONS[this.weaponId].scale ? WEAPONS[this.weaponId].scale : DEFAULT_SIZE_SCALE;
+        this.weapon.size = {
+            x: this.weapon.img.width / this.weapon.scale,
+            y: this.weapon.img.height / this.weapon.scale
         }
+        this.gunImage = this.weapon.img;
+
     }
     update(){
         // weapon
@@ -54,10 +51,11 @@ class Player extends CharacterEntity{
                 
 
         // movement
+        let timeSinceGrouned = Date.now() - this.groundedTime;
         if (pressedKeys['w'] || pressedKeys[' ']){ // jump
-            let timeSinceGrouned = Date.now() - this.groundedTime;
-            if (this.grounded || timeSinceGrouned < 20){
+            if (this.grounded || timeSinceGrouned < this.groundedCooldown){
                 this.vel.y = this.jumpSpeed;
+                this.groundedTime = timeSinceGrouned;
                 // this.vel.x += this.solidSpeed.x;
                 // this.vel.y += this.solidSpeed.y;
             }
@@ -91,6 +89,7 @@ class Player extends CharacterEntity{
 
 
         // gravity
+        if (!this.groundedTime || timeSinceGrouned > this.groundedCooldown)
         this.vel.y = approach(this.vel.y, this.fallSpeed, gravity * dt);
 
 
@@ -151,8 +150,10 @@ class Player extends CharacterEntity{
         }
         // Move Y
             let playerRect = getSolidRect(this);
-      
-            this.remainder.y += this.vel.y * dt * DELTA_SPEED_CORRECTION;
+
+            if (!this.groundedTime || timeSinceGrouned > this.groundedCooldown) this.remainder.y += this.vel.y * dt * DELTA_SPEED_CORRECTION;
+            else this.remainder.y += 0;
+            
             let moveY = Math.round(this.remainder.y);
             if(moveY != 0)
             {

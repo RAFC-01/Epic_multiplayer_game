@@ -28,21 +28,7 @@ body{
     text-align: center;
     cursor: pointer;
 }
-#updateScreen{
-    position: fixed;
-    display: none;
-    top: 0px;
-    left: 0px;
-    z-index: 2;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 40px;
-    width: 100vw;
-    height: 100vh;
-    background-color: black;
-}
-#LostConnectionScreen{
+.blackScreen{
     position: fixed;
     display: none;
     top: 0px;

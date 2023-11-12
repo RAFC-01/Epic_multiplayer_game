@@ -38,8 +38,9 @@ new Block(0, 0, 1980, 10, 'red');
 new Block(250, floor_level-100, 50, 100, 'red');
 new Block(550, floor_level-150, 50, 150, 'red');
 new Block(650, floor_level-50, 50, 50, 'red');
+new Block(60, floor_level-350, 300, 50, 'red');
 
-const player = new Player(100, floor_level - 250);
+let player;
 
 let lastUpdate = Date.now();
 let reload;
@@ -48,29 +49,80 @@ let dealDmgToPlayer;
 let pingNofity;
 let pingLifeSpan = 1;
 
+let pingTypes = {
+  0: 'missing'
+}
+
 let GAME_STATE = 'lobby';
 
-const pingsAudio = {
-  0: new Howl({
-    src: './audio/missing.mp3',
-    volume: 0.2
-  })
-};
+const pingsAudio = {};
+
+const loadedAudio = {};
 
 // for testing
 let newDelta = false;
 
-const pingImgs = {};
-pingImgs[0] = new Image();
-pingImgs[0].src = './imgs/missing.png';
-pingImgs[0].onload = () => {
-  console.log('loaded png')
+let loadedImgs = {};
+
+function initializePingAudio(){
+  pingsAudio[0] = loadedAudio['missing'];
 }
 
-function startGame(name){
-  if (name) player.name = name;
-  try{
+function loadAssets(next){
+  document.getElementById('loadingScreen').style.display = 'flex';
+  const assetsToLoad = ['arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun'];
+  const soundsToLoad = ['missing'];
 
+  let loadedStatus = {
+    img: false,
+    sound: false,
+  }
+
+  const loading = (i = 0) => {
+    let img = new Image();
+    img.src = 'imgs/'+assetsToLoad[i] + '.png';
+    img.onload = () => {
+        loadedImgs[assetsToLoad[i]] = img;
+        i++;
+        if (i < assetsToLoad.length) loading(i);
+        else {
+          loadedStatus.img = true;
+          if (loadedStatus.img && loadedStatus.sound) next();
+        }
+    }
+  }
+  loading();
+
+  const loadSounds = (i = 0) => {
+    
+    let sound = new Howl({
+      src: `./audio/${soundsToLoad[i]}.mp3`,
+      volume: 0.2
+    });
+    sound.on('load', ()=>{
+      loadedAudio[soundsToLoad[i]] = sound;
+      i++;
+      if (i < soundsToLoad.length) loadSounds(i);
+      else {
+        loadedStatus.sound = true;    
+        if (loadedStatus.img && loadedStatus.sound) next();
+      }
+    })
+    
+  }
+  loadSounds();
+
+} 
+
+
+
+function startGame(name){
+  initializeItems();
+  initializePingAudio();
+  createWeaponImgs();
+  player = new Player(100, floor_level - 250, name);
+  try{
+    document.getElementById('loadingScreen').style.display = 'none';
     let socket = io({
       reconnection: true
     });
@@ -141,8 +193,8 @@ function startGame(name){
     socket.on('pingN', pingData => {
       createPing(pingData);
     })
-    pingNofity = (x, y, type = 0) => {
-      let data = {x, y, type};
+    pingNofity = (x, y, id = 0) => {
+      let data = {x, y, id};
       socket.emit('pingNotify', data);
     }
     socket.on('shootB', (data) => {
@@ -186,7 +238,7 @@ function createParticle(data){
 function createPing(data){
     data.time = Date.now();
     pings.push(data);
-    pingsAudio[data.type].play();
+    pingsAudio[data.id].play();
 }
 
 window.onload = () => {
@@ -197,21 +249,26 @@ window.onload = () => {
   if (!name){
     document.getElementById('enteringScreen').style.display = 'flex';
   }else{
-    if (player) startGame(name);
+      loadAssets(() => {
+        startGame(name);
+      });
   }
 
 }
 
 function disableEnteringScreen(values){
   document.getElementById('enteringScreen').style.display = 'none';
-  startGame(values.name);
+  loadAssets(() => {
+    startGame(values.name);
+  });
 }
 function drawPings(){
   let scaleDown = 2;
   let timeNow = Date.now();
   for (let i = pings.length-1; i >= 0; i--){
     let ping = pings[i];
-    let img = pingImgs[ping.type];
+    let pingType = pingTypes[ping.id];
+    let img = loadedImgs[pingType];
     ctx.beginPath();
     ctx.drawImage(img, ping.x - img.width / scaleDown / 2, ping.y - img.height / scaleDown / 2, img.width / scaleDown, img.height / scaleDown);
     ctx.closePath();
@@ -356,6 +413,10 @@ document.addEventListener('keyup', (e) =>{
 
 });
 
+document.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+})
+
 document.addEventListener('mousemove', (e) => {
   mousePos.x = e.clientX;
   mousePos.y =  e.clientY;
@@ -366,9 +427,11 @@ document.addEventListener('mousedown', (e) => {
   let y = e.clientY;
 
   if (e.button == 0){
-    if (pressedKeys['control']) player.tp(x, y);
-    else if (pressedKeys['shift']) pingNofity(x,y);
-    else player.shooting = true;
+    if (player){
+      if (pressedKeys['control']) player.tp(x, y);
+      else if (pressedKeys['shift']) pingNofity(x,y);
+      else player.shooting = true;
+    }
   }
 
   if (e.target.id == 'playBtn'){
@@ -399,7 +462,7 @@ document.addEventListener('mousedown', (e) => {
   }
 });
 document.addEventListener('mouseup', (e) => {
-  if (e.button == 0 && player.shooting == true) player.shooting = false;
+  if (player && e.button == 0 && player.shooting == true) player.shooting = false;
 })
 
 function approach(current, target, increase)

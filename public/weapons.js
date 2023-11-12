@@ -1,11 +1,5 @@
 const WEAPON_IMGS = {};
 
-WEAPON_IMGS['ak'] = new Image();
-WEAPON_IMGS['ak'].src = './imgs/gun.png';
-
-WEAPON_IMGS['portal_gun'] = new Image();
-WEAPON_IMGS['portal_gun'].src = './imgs/portal_gun.png';
-
 const DEFAULT_SIZE_SCALE = 3;
 const DEFAULT_BULLET_COLOR = 'red';
 const DEFAULT_BULLET_SIZE = 2;
@@ -16,14 +10,17 @@ const DEFAULT_WEAPON_COOLDOWN = 400; // ms
 const WEAPONS = {
     1: {
         name: 'ak47',
-        img: WEAPON_IMGS['ak'],
     },
     2: {
         name: 'portal gun',
-        img: WEAPON_IMGS['portal_gun'],
         bulletSize: 10,
         dmg: 0,
     }
+}
+
+function createWeaponImgs(){
+    WEAPONS[1].img = loadedImgs['gun'];
+    WEAPONS[2].img = loadedImgs['portal_gun'];
 }
 
 const PARTICLES = [];
@@ -37,7 +34,7 @@ class Particle{
         this.color = this.weapon.color ? this.weapon.color : DEFAULT_BULLET_COLOR;
         this.size = this.weapon.bulletSize ? this.weapon.bulletSize : DEFAULT_BULLET_SIZE;
         this.dir = dir;
-        this.dmg = this.weapon.dmg ? this.weapon.dmg : DEFAULT_WEAPON_DMG;
+        this.dmg = this.weapon.dmg !== undefined ? this.weapon.dmg : DEFAULT_WEAPON_DMG;
         this.vel = {x: 0, y: 0};
         this.speed = speed;
         this.createdTime = Date.now();
@@ -90,6 +87,7 @@ class Particle{
                 // console.log('hit player', collision.target);
                 if (collision.target !== player.socketId){
                     // deal dmg to attacked player
+                    console.log(this.dmg);
                     if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target);
                     player.dealDmg(-this.dmg); // heal hp
                 }
