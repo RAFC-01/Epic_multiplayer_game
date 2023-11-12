@@ -13,17 +13,34 @@ const DEFAULT_WEAPON_KNOCKBACK = 3;
 const WEAPONS = {
     1: {
         name: 'ak47',
+        imageName: 'gun'
     },
-    2: {
+    21: {
         name: 'portal gun',
+        imageName: 'portal_gun',
         bulletSize: 10,
         dmg: 0,
+        hasTrail: false,
+        knockback: 0,
+        drag: 0
+    },
+    3: {
+        name: 'ak47-asimov',
+        imageName: 'ak_asimov',
+        knockback: 1,
+        drag: 1,
+        dmg: 2,
+        cooldown: 300
     }
 }
 
 function createWeaponImgs(){
-    WEAPONS[1].img = loadedImgs['gun'];
-    WEAPONS[2].img = loadedImgs['portal_gun'];
+    let weaponsIDs = [1, 21, 3];
+    for (let i = 0; i < weaponsIDs.length; i++){
+        let id = weaponsIDs[i];
+        WEAPONS[id].img = loadedImgs[WEAPONS[id].imageName];
+        WEAPONS[id].scale = WEAPONS[id].scale ? WEAPONS[id].scale : DEFAULT_SIZE_SCALE; 
+    }
 }
 
 const PARTICLES = [];
@@ -38,11 +55,11 @@ class Particle{
         this.size = this.weapon.bulletSize ? this.weapon.bulletSize : DEFAULT_BULLET_SIZE;
         this.dir = dir;
         this.dmg = this.weapon.dmg !== undefined ? this.weapon.dmg : DEFAULT_WEAPON_DMG;
-        this.hasTrail = this.weapon.hasTrail ? this.weapon.hasTrail : DEFAULT_WEAPON_TRAIL_STATE;
+        this.hasTrail = this.weapon.hasTrail !== undefined ? this.weapon.hasTrail : DEFAULT_WEAPON_TRAIL_STATE;
         this.vel = {x: 0, y: 0};
         this.speed = speed;
         this.createdTime = Date.now();
-        this.knockback = this.weapon.knockback ? this.weapon.knockback : DEFAULT_WEAPON_KNOCKBACK;
+        this.knockback = this.weapon.knockback !== undefined ? this.weapon.knockback : DEFAULT_WEAPON_KNOCKBACK;
         this.shooterId = shooterId;
         this.trail = [];
         this.trailLength = 5;
@@ -94,7 +111,7 @@ class Particle{
         }
         for (let i = 0; i < players.length; i++){
             let playerRect = players[i].values;
-            if (this.shooterId == players[i].id) continue;
+            if (this.shooterId == players[i].id || players[i].values.isDead) continue;
             if (pointInRect(point, playerRect)){
                 collision = {target: players[i].id};
             }
@@ -119,7 +136,11 @@ class Particle{
                     // console.log(this.dmg);
                     if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target);
                     // knockback attacked player
-                    
+                    let knockbackValue = {
+                        x: this.dir.x * this.knockback,
+                        y: this.dir.y * this.knockback
+                    }
+                    knockbackPlayer(knockbackValue.x, knockbackValue.y, collision.target);                   
 
                     player.dealDmg(-this.dmg); // heal hp
                 }
@@ -127,6 +148,114 @@ class Particle{
                 // console.log('just a block');
             }
             PARTICLES.splice(PARTICLES.indexOf(this), 1);
+        }
+    }
+}
+class SpecialParticle{
+    constructor(x, y, size, dir, color, speed, shooterId){
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.dir = dir;
+        this.color = color;
+        this.speed = speed;
+        this.shooterId = shooterId;
+        this.knockback = speed;
+        this.dmg = 50;
+        this.vel = {
+            x: 0, y: 0
+        }
+
+        let newspeed = {
+            x: this.dir.x * this.speed,
+            y: this.dir.y * this.speed
+        }
+        this.vel.x = newspeed.x;
+        this.vel.y = newspeed.y;
+
+        this.slowdown = 4;
+        this.fallSpeed = 10;
+
+        SPECIAL_PARTICLES.push(this);
+    }
+    draw(){
+        ctx.beginPath();
+        ctx.fillStyle = this.color;
+        ctx.arc(this.x, this.y, this.size, 0, 360, false);
+        ctx.fill();
+        ctx.closePath();
+    }
+    update(){
+        // this.speed = ;
+
+        let collision = false;
+
+        let rect = {
+            x: this.x,
+            y: this.y,
+            size: {
+                x: this.size,
+                y: this.size
+            }
+        }
+
+        let particleRect = getSolidRect(rect);
+
+        for (let i = 0; i < players.length; i++){
+            let playerRect = players[i].values;
+            if (players[i].values.isDead) continue;
+            if (rectCollision(particleRect, playerRect)){
+                collision = {target: players[i].id};
+            }
+        }
+        for (let i = 0; i < blocks.length; i++){
+            let block = blocks[i];
+            let blockRect = getSolidRect(block);
+            if (rectCollision(particleRect, blockRect)){
+                collision = true;
+            }
+        }   
+
+
+        // friction
+        this.vel.x = approach(this.vel.x, 1, this.slowdown * dt);
+        this.vel.y = approach(this.vel.y, 1, this.slowdown * dt);
+        
+        // gravity
+        this.vel.y = approach(this.vel.y, this.fallSpeed, gravity * dt);
+
+        if (!collision){
+            this.x += this.vel.x * dt * DELTA_SPEED_CORRECTION;
+            this.y += this.vel.y * dt * DELTA_SPEED_CORRECTION;
+        }else{
+            // hit target, destroy bullet
+            if (collision.target){
+                // console.log('hit player', collision.target);
+                if (collision.target !== this.shooterId){
+                    // deal dmg to attacked player
+                    // console.log(this.dmg);
+                    if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target);
+                    // knockback attacked player
+                    let knockbackValue = {
+                        x: this.dir.x * this.knockback,
+                        y: this.dir.y * this.knockback
+                    }
+                    knockbackPlayer(knockbackValue.x, knockbackValue.y, collision.target);                   
+
+                    // player.dealDmg(-this.dmg); // heal hp
+                }else{
+                    if (player.socketId == this.shooterId){
+                        let knockbackValue = {
+                            x: this.dir.x * this.knockback,
+                            y: this.dir.y * this.knockback
+                        }
+                        player.pushBack(knockbackValue.x, knockbackValue.y);                    
+                    }
+                }
+            }else{
+                // console.log('just a block');
+            }
+            SPECIAL_PARTICLES.splice(SPECIAL_PARTICLES.indexOf(this), 1);
         }
     }
 }

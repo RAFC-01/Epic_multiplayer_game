@@ -51,6 +51,7 @@ body{
     font-weight: bold;
 }
 #respawnBtn{
+    user-select: none;
     border: 2px solid white;
     padding: 20px;
     width: 30vw;

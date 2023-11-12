@@ -22,12 +22,8 @@ class Player extends CharacterEntity{
         this.directionChangeMult = 1.6;
         this.jumpSpeed = -5;
 
-        this.weapon = WEAPONS[this.weaponId];
-        this.weapon.scale = WEAPONS[this.weaponId].scale ? WEAPONS[this.weaponId].scale : DEFAULT_SIZE_SCALE;
-        this.weapon.size = {
-            x: this.weapon.img.width / this.weapon.scale,
-            y: this.weapon.img.height / this.weapon.scale
-        }
+        this.changeWeapon(this.weaponId);
+
         this.gunImage = this.weapon.img;
 
     }
@@ -176,7 +172,8 @@ class Player extends CharacterEntity{
                             {
                                 this.grounded = true;
                             }
-      
+                            
+                            this.vel.y = 0;
                             collisionHappenedY = true;
                             break;
                         }
@@ -198,6 +195,15 @@ class Player extends CharacterEntity{
     tp(x, y){
         this.x = x - this.size.x / 2;
         this.y = y - this.size.y / 2;
+    }
+    showInteractionKey(){
+        ctx.imageSmoothingEnabled = false;
+        ctx.beginPath();
+        ctx.drawImage(loadedImgs['interactionKey'], this.x+60, this.y-40, 48, 48);
+        ctx.closePath();
+    }
+    interact(){
+        if (this.interacionWith) this.interacionWith.interact();
     }
 }
 function getSolidRect(solid){

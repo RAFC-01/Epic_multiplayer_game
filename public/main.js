@@ -14,6 +14,7 @@ const fallSpeed = 1;
 const friction = 0.8;
 
 const STRUCTURES = [];
+const SPECIAL_PARTICLES = [];
 
 let timeMultiplier = 1;
 
@@ -40,6 +41,7 @@ let shootBullet;
 let dealDmgToPlayer;
 let pingNofity;
 let knockbackPlayer;
+let shootSpecial;
 let pingLifeSpan = 1;
 
 let pingTypes = {
@@ -64,7 +66,7 @@ function initializePingAudio(){
 
 function loadAssets(next){
   document.getElementById('loadingScreen').style.display = 'flex';
-  const assetsToLoad = ['arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun'];
+  const assetsToLoad = ['interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
   const soundsToLoad = ['missing'];
 
   let loadedStatus = {
@@ -139,6 +141,7 @@ function startGame(name){
       drawStructures();
       updatePlayers(socket);
       updatePartiles();
+      updateSpecialPartiles();
       player.draw();
       drawPings();
       
@@ -229,6 +232,17 @@ function startGame(name){
       socket.emit('knockback', data);
     }
 
+    socket.on('shootSpecialRecive', (data) => {
+      createSpecialParticle(data.x, data.y, data.size, data.dir, data.color, data.speed, data.shooterId);
+    });
+
+    shootSpecial = (x, y, size, dir, color, speed, shooterId) => {
+        let data = {
+          x, y, size, dir, color, speed, shooterId
+        }
+        // console.log(data);
+        socket.emit('shootSpecial', data);
+    }
     GAME_STATE = 'game';
 
   }catch (err){
@@ -236,17 +250,31 @@ function startGame(name){
   }
 }
 
+let invisibleColor = 'rgba(0, 0, 0, 0)';
+
+function createSpecialParticle(x, y, size, dir, color, speed, shooterId){
+  new SpecialParticle(x, y, size, dir, color, speed, shooterId);
+}
+
+function updateSpecialPartiles(){
+  for (let i = 0; i < SPECIAL_PARTICLES.length; i++){
+    let p = SPECIAL_PARTICLES[i];
+    p.draw();
+    p.update();
+  }
+}
+
 function drawMap(){
   // walls
   new Block(0, floor_level, 1980, canvas.height/2, 'green');
-  new Block(0, floor_level - 1000, 10, 1000, 'red');
-  new Block(1980, floor_level - 1000, 10, 1000, 'red');
-  new Block(0, 0, 1980, 10, 'red');
+  new Block(0, floor_level - 1000, 10, 1000, invisibleColor);
+  new Block(1980, floor_level - 1000, 10, 1000, invisibleColor);
+  new Block(0, 0, 1980, 10, invisibleColor);
   
   // other
   new Block(250, floor_level-50, 50, 50, 'red');
   // new Block(550, floor_level-150, 50, 150, 'red');
-  new Block(800, floor_level-50, 50, 50, 'red');
+  new Block(950, floor_level-50, 50, 50, 'red');
   new Block(60, floor_level-450, 320, 50, 'red');
   
   new Spike(300, floor_level-50, {x: 50, y:50});
@@ -259,6 +287,11 @@ function drawMap(){
   new Spike(650, floor_level-50, {x: 50, y:50});
   new Spike(700, floor_level-50, {x: 50, y:50});
   new Spike(750, floor_level-50, {x: 50, y:50});
+  new Spike(800, floor_level-50, {x: 50, y:50});
+  new Spike(850, floor_level-50, {x: 50, y:50});
+  new Spike(900, floor_level-50, {x: 50, y:50});
+
+  new Cannon(0, floor_level-212, {x: 300, y:212})
 }
 
 
@@ -366,7 +399,7 @@ function drawBlocks(){
 }
 function drawBackGround(){
     ctx.beginPath();
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = '#03021a';
     ctx.rect(0, 0, canvas.width, canvas.height);
     ctx.fill();
     ctx.closePath();
@@ -436,10 +469,14 @@ function getRandomColor() {
 document.addEventListener('keydown', (e) => {
   const key = e.key ? e.key.toLowerCase() : 0;
     if (pressedKeys['control'] && GAME_STATE == 'game') {
-      if (key == 'd' || key == 's' || key == 'p'){
+      if (key == 'd' || key == 's' || key == 'p' || key == 'e'){
         e.preventDefault();
       }
     } 
+    if (key == 'e'){
+      // console.log('co nie')
+      if (player.interacionWith) player.interact();
+    }
     if (key == 'tab'){
       e.preventDefault();
     }

@@ -33,7 +33,7 @@ class CharacterEntity{
     shoot(){
         if (GAME_STATE != 'game' || this.isDead) return;
 
-        let weaponDrag = WEAPONS[this.weaponId].drag ? WEAPONS[this.weaponId].drag : DEFAULT_WEAPON_DRAG; 
+        let weaponDrag = WEAPONS[this.weaponId].drag !== undefined ? WEAPONS[this.weaponId].drag : DEFAULT_WEAPON_DRAG; 
         let cooldown = WEAPONS[this.weaponId].cooldown ? WEAPONS[this.weaponId].cooldown : DEFAULT_WEAPON_COOLDOWN;
         let now = Date.now();
 
@@ -126,8 +126,19 @@ class CharacterEntity{
             // particles.push(new Particle(x, y, speedX, speedY, size, color, life));
         }
     }
+    changeWeapon(id){
+        if (!WEAPONS[id]) return;
+        this.weaponId = id;
+        this.weapon = WEAPONS[this.weaponId];
+        this.weapon.size = {
+            x: this.weapon.img.width / this.weapon.scale,
+            y: this.weapon.img.height / this.weapon.scale
+        }
+        this.gunImage = this.weapon.img;
+    }
     pushBack(x, y){
-        this.vel.x += x;
-        this.vel.y += y;
+        if (this.isDead) return;
+        if (Math.abs(this.vel.x) < Math.abs(x) * 3) this.vel.x += x;
+        if (Math.abs(this.vel.y) < Math.abs(y) * 3) this.vel.y += y;
     }
 }

@@ -23,7 +23,9 @@ class Structure{
 
             if (!this.colisionDmg) this.colisionDmg = 0;
             if (collision){
-                player.dealDmg(this.colisionDmg);
+                this.collision();
+            }else{
+                if (this.noCollision) this.noCollision();
             }
 
         }
@@ -43,5 +45,60 @@ class Spike extends Structure{
         super(x, y, size, name, image);
         this.canCollide = true;
         this.colisionDmg = 1000;
+    }
+    collision(){
+        player.dealDmg(this.colisionDmg);
+    }
+}
+
+class Cannon extends Structure{
+    constructor(x, y, size){
+        let image = loadedImgs['cannon'];
+        let name = 'Cannon';
+        super(x, y, size, name, image);
+        this.canCollide = true;
+        this.cooldown = 5000;
+        this.orientation = '1';
+        this.lastTimeShoot = 0;
+    }
+    collision(){
+        player.showInteractionKey();
+        player.interacionWith = this;
+    }
+    noCollision(){
+        player.interacionWith = null;
+    }
+    interact(){
+        let now = Date.now();
+        if (now - this.lastTimeShoot < this.cooldown) return;
+        let dir;
+        if (this.orientation){
+            dir = {
+                x: 0.9313908626506681,
+                y: -0.36402068755888645
+            }
+        }else{
+            dir = {
+                x: -0.9313908626506681,
+                y: -0.36402068755888645
+            }            
+        }
+        new SpecialParticle(this.x+this.image.width, this.y+20, 20, dir, 'red', 15, player.socketId);
+        shootSpecial(this.x+this.image.width, this.y+20, 20, dir, 'red', 15, player.socketId);
+        
+        this.lastTimeShoot = Date.now();
+    }
+
+}
+
+class Portal extends Structure{
+    // blue then yellow
+    constructor(x, y, size, color){
+        let imgName = color + '_portal_flat';
+        let image = loadedImgs[imgName];
+        let name = color+' portal';
+        super(x, y, size, name, image);
+        this.canCollide = true;
+        this.colisionDmg = 0;
     }
 }
