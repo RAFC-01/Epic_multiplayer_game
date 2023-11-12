@@ -1,11 +1,14 @@
 const WEAPON_IMGS = {};
 
 const DEFAULT_SIZE_SCALE = 3;
-const DEFAULT_BULLET_COLOR = 'red';
-const DEFAULT_BULLET_SIZE = 2;
+const DEFAULT_BULLET_COLOR = {r: 255, g: 0, b: 0};
+const DEFAULT_BULLET_SIZE = 3;
 const BULLET_ACCELERATION = 5;
 const DEFAULT_WEAPON_DMG = 1;
 const DEFAULT_WEAPON_COOLDOWN = 400; // ms
+const DEFAULT_WEAPON_TRAIL_STATE = true;
+const DEFAULT_WEAPON_DRAG = 2;
+const DEFAULT_WEAPON_KNOCKBACK = 3;
 
 const WEAPONS = {
     1: {
@@ -35,15 +38,33 @@ class Particle{
         this.size = this.weapon.bulletSize ? this.weapon.bulletSize : DEFAULT_BULLET_SIZE;
         this.dir = dir;
         this.dmg = this.weapon.dmg !== undefined ? this.weapon.dmg : DEFAULT_WEAPON_DMG;
+        this.hasTrail = this.weapon.hasTrail ? this.weapon.hasTrail : DEFAULT_WEAPON_TRAIL_STATE;
         this.vel = {x: 0, y: 0};
         this.speed = speed;
         this.createdTime = Date.now();
+        this.knockback = this.weapon.knockback ? this.weapon.knockback : DEFAULT_WEAPON_KNOCKBACK;
         this.shooterId = shooterId;
+        this.trail = [];
+        this.trailLength = 5;
         PARTICLES.push(this);
     }
     draw(){
+        // trail
+        if (this.hasTrail){
+            let trailSize = this.size-1 > 0 ? this.size-1 : this.size;
+            for (let i = 0; i < this.trail.length; i++){
+                let t = this.trail[i];
+                let alpha = i / this.trail.length;
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.arc(t.x, t.y, trailSize, 0, 360, false);
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+        // particle
         ctx.beginPath();
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
         ctx.arc(this.x, this.y, this.size, 0, 360, false);
         ctx.fill();
         ctx.closePath();
@@ -58,6 +79,14 @@ class Particle{
 
         this.vel.x = speed.x * dt * DELTA_SPEED_CORRECTION;
         this.vel.y = speed.y * dt * DELTA_SPEED_CORRECTION;
+
+        // add trail
+        if (this.hasTrail){
+            if (this.trail.length >= this.trailLength) {
+                this.trail.shift(); // Remove the oldest trail element
+            }
+            this.trail.push({ x: this.x, y: this.y });
+        }
 
         let point = {
             x: this.x,
@@ -87,8 +116,11 @@ class Particle{
                 // console.log('hit player', collision.target);
                 if (collision.target !== player.socketId){
                     // deal dmg to attacked player
-                    console.log(this.dmg);
+                    // console.log(this.dmg);
                     if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target);
+                    // knockback attacked player
+                    
+
                     player.dealDmg(-this.dmg); // heal hp
                 }
             }else{

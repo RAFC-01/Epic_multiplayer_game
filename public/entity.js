@@ -31,8 +31,9 @@ class CharacterEntity{
         // ctx.fillText(Math.floor(degrees), this.x, this.y - 20);
     }
     shoot(){
-        if (GAME_STATE != 'game') return;
+        if (GAME_STATE != 'game' || this.isDead) return;
 
+        let weaponDrag = WEAPONS[this.weaponId].drag ? WEAPONS[this.weaponId].drag : DEFAULT_WEAPON_DRAG; 
         let cooldown = WEAPONS[this.weaponId].cooldown ? WEAPONS[this.weaponId].cooldown : DEFAULT_WEAPON_COOLDOWN;
         let now = Date.now();
 
@@ -48,6 +49,9 @@ class CharacterEntity{
         let y = Math.sin(angle);
 
         let vector = {x, y};
+
+        this.pushBack(-x * weaponDrag, -y * weaponDrag);
+
         new Particle(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , vector, bulletSpeed, this.socketId, this.weaponId);
         shootBullet(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , vector, bulletSpeed, this.weaponId);
         this.lastShoot = Date.now();
@@ -71,8 +75,11 @@ class CharacterEntity{
         this.hp -= amm;
         if (this.hp < 0) this.hp = 0;
         if (this.hp > this.maxHp) this.hp = this.maxHp;
+        
+        if (this.hp == 0) this.kill();
     }
     draw(){
+        if (this.isDead) return;
         ctx.beginPath();
         ctx.fillStyle = this.color;
         ctx.rect(this.x, this.y, this.size.x, this.size.y);
@@ -90,5 +97,37 @@ class CharacterEntity{
         this.drawWeapon();
         
         this.drawHpBar();
+    }
+    kill(){
+        this.hp = 0;
+        this.isDead = true;
+        this.vel.x = 0;
+        this.vel.y = 0;
+        document.getElementById('deathScreen').style.display = 'flex';        
+    }
+    respawn(){
+        this.hp = this.maxHp;
+        this.tp(spawnPoint.x, spawnPoint.y);
+        document.getElementById('deathScreen').style.display = 'none';        
+        setTimeout(()=> {
+            this.isDead = false;
+        },100)
+    }
+    explode(x, y) {
+        for (var i = 0; i < 12; i++) {
+            var angle = (i * Math.PI) / 6; // Spread particles evenly in a circle
+            var speed = Math.random() * 5 + 2;
+            var speedX = Math.cos(angle) * speed;
+            var speedY = Math.sin(angle) * speed;
+            var size = Math.random() * 20 + 10;
+            var color = 'rgb(' + Math.floor(Math.random() * 255) + ', ' + Math.floor(Math.random() * 255) + ', ' + Math.floor(Math.random() * 255) + ')';
+            var life = Math.random() * 30 + 10;
+
+            // particles.push(new Particle(x, y, speedX, speedY, size, color, life));
+        }
+    }
+    pushBack(x, y){
+        this.vel.x += x;
+        this.vel.y += y;
     }
 }

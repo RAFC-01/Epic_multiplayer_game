@@ -42,6 +42,10 @@ io.on('connection', client => {
     io.to(data.playerID).emit('reciveDmg', data.dmg);
   })
 
+  client.on('knockback', (data) => {
+    io.to(data.playerID).emit('knockbackRecive', data);
+  })
+
   client.on('disconnect', () => {
     console.log('user disconnected');
     let player = getPlayerById(client.id);

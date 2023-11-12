@@ -33,7 +33,7 @@ class Player extends CharacterEntity{
     }
     update(){
         // weapon
-
+        if (this.isDead) return;
         let gunPos = {
             x: this.x + this.size.x / 2,
             y: this.y + this.size.y / 2.5
@@ -49,7 +49,6 @@ class Player extends CharacterEntity{
 
         // physics 
                 
-
         // movement
         let timeSinceGrouned = Date.now() - this.groundedTime;
         if (pressedKeys['w'] || pressedKeys[' ']){ // jump

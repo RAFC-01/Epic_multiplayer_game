@@ -13,6 +13,8 @@ const gravity = 14;
 const fallSpeed = 1;
 const friction = 0.8;
 
+const STRUCTURES = [];
+
 let timeMultiplier = 1;
 
 const DELTA_SPEED_CORRECTION = 140;
@@ -28,17 +30,7 @@ canvas.height = innerHeight;
 
 let floor_level = 700;
 
-// walls
-new Block(0, floor_level, 1980, canvas.height/2, 'green');
-new Block(0, floor_level - 1000, 10, 1000, 'red');
-new Block(1980, floor_level - 1000, 10, 1000, 'red');
-new Block(0, 0, 1980, 10, 'red');
-
-// other
-new Block(250, floor_level-100, 50, 100, 'red');
-new Block(550, floor_level-150, 50, 150, 'red');
-new Block(650, floor_level-50, 50, 50, 'red');
-new Block(60, floor_level-350, 300, 50, 'red');
+let spawnPoint = {x: 100, y: floor_level - 250};
 
 let player;
 
@@ -47,6 +39,7 @@ let reload;
 let shootBullet;
 let dealDmgToPlayer;
 let pingNofity;
+let knockbackPlayer;
 let pingLifeSpan = 1;
 
 let pingTypes = {
@@ -63,6 +56,7 @@ const loadedAudio = {};
 let newDelta = false;
 
 let loadedImgs = {};
+
 
 function initializePingAudio(){
   pingsAudio[0] = loadedAudio['missing'];
@@ -114,13 +108,14 @@ function loadAssets(next){
 
 } 
 
-
+let FPS_LIMIT = 0;
 
 function startGame(name){
+  drawMap();
   initializeItems();
   initializePingAudio();
   createWeaponImgs();
-  player = new Player(100, floor_level - 250, name);
+  player = new Player(spawnPoint.x, spawnPoint.y, name);
   try{
     document.getElementById('loadingScreen').style.display = 'none';
     let socket = io({
@@ -141,6 +136,7 @@ function startGame(name){
       
       drawBackGround();
       drawBlocks();
+      drawStructures();
       updatePlayers(socket);
       updatePartiles();
       player.draw();
@@ -149,6 +145,7 @@ function startGame(name){
       socket.emit('update', getPlayerInfo(player));
       
       stats.end();
+
       requestAnimationFrame(animate);
     }
     
@@ -222,6 +219,15 @@ function startGame(name){
       }
       socket.emit('dealDmg', data);
     }
+    socket.on('knockbackRecive', (data) => {
+      player.pushBack(data.x, data.y);
+    })
+    knockbackPlayer = (x, y, playerID) => {
+      let data = {
+        x,y,playerID
+      }
+      socket.emit('knockback', data);
+    }
 
     GAME_STATE = 'game';
 
@@ -229,6 +235,32 @@ function startGame(name){
     console.log(err);
   }
 }
+
+function drawMap(){
+  // walls
+  new Block(0, floor_level, 1980, canvas.height/2, 'green');
+  new Block(0, floor_level - 1000, 10, 1000, 'red');
+  new Block(1980, floor_level - 1000, 10, 1000, 'red');
+  new Block(0, 0, 1980, 10, 'red');
+  
+  // other
+  new Block(250, floor_level-50, 50, 50, 'red');
+  // new Block(550, floor_level-150, 50, 150, 'red');
+  new Block(800, floor_level-50, 50, 50, 'red');
+  new Block(60, floor_level-450, 320, 50, 'red');
+  
+  new Spike(300, floor_level-50, {x: 50, y:50});
+  new Spike(350, floor_level-50, {x: 50, y:50});
+  new Spike(400, floor_level-50, {x: 50, y:50});
+  new Spike(450, floor_level-50, {x: 50, y:50});
+  new Spike(500, floor_level-50, {x: 50, y:50});
+  new Spike(550, floor_level-50, {x: 50, y:50});
+  new Spike(600, floor_level-50, {x: 50, y:50});
+  new Spike(650, floor_level-50, {x: 50, y:50});
+  new Spike(700, floor_level-50, {x: 50, y:50});
+  new Spike(750, floor_level-50, {x: 50, y:50});
+}
+
 
 function createParticle(data){
   // console.log(data);
@@ -281,6 +313,12 @@ function drawPings(){
     }
   }
 }
+function drawStructures(){
+  for (let i = 0; i < STRUCTURES.length; i++){
+    STRUCTURES[i].draw();
+    STRUCTURES[i].update();
+  }
+}
 function updatePartiles(){
   for (let i = 0; i < PARTICLES.length; i++){
     let p = PARTICLES[i];
@@ -310,6 +348,7 @@ function getPlayerInfo(pl){
     weaponDegrees: pl.weaponDegrees,
     hp: pl.hp,
     maxHp: pl.maxHp,
+    isDead: pl.isDead,
     pos: {
       x: pl.x,
       y: pl.y,
@@ -401,6 +440,9 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
       }
     } 
+    if (key == 'tab'){
+      e.preventDefault();
+    }
     
     pressedKeys[key] = 1;
 
@@ -434,6 +476,9 @@ document.addEventListener('mousedown', (e) => {
     }
   }
 
+  if (e.target.id == 'respawnBtn'){
+    player.respawn();
+  }
   if (e.target.id == 'playBtn'){
     let elems = document.getElementById('inputs').children;
     let values = {};
