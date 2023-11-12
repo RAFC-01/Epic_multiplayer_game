@@ -1,6 +1,7 @@
 class Player extends CharacterEntity{
     constructor(x, y){
         super();
+        this.display = 'You';
         this.x = x;
         this.y = y;
         this.vel = {x: 0, y: 0};
@@ -30,9 +31,25 @@ class Player extends CharacterEntity{
             }
             this.gunImage = this.weapon.img;
             this.weaponLoaded = true;
+
         }
     }
     update(){
+        // weapon
+
+        let gunPos = {
+            x: this.x + this.size.x / 2,
+            y: this.y + this.size.y / 2.5
+        }
+
+        const mouseX = mousePos.x - canvas.getBoundingClientRect().left;
+        const mouseY = mousePos.y - canvas.getBoundingClientRect().top;
+    
+        this.weaponAngle = Math.atan2(mouseY - gunPos.y, mouseX - gunPos.x);
+        this.weaponDegrees =  this.weaponAngle * (180 / Math.PI);
+
+        if (this.shooting) this.shoot();
+
         // physics 
                 
 
@@ -89,7 +106,7 @@ class Player extends CharacterEntity{
 
         // execute movement
         
-        this.remainder.x += this.vel.x;
+        this.remainder.x += this.vel.x * dt * DELTA_SPEED_CORRECTION;
         let moveX = Math.round(this.remainder.x);
         if(moveX != 0)
         {
@@ -135,7 +152,7 @@ class Player extends CharacterEntity{
         // Move Y
             let playerRect = getSolidRect(this);
       
-            this.remainder.y += this.vel.y;
+            this.remainder.y += this.vel.y * dt * DELTA_SPEED_CORRECTION;
             let moveY = Math.round(this.remainder.y);
             if(moveY != 0)
             {

@@ -5,7 +5,9 @@ const {ngrok_config} = require('./ngrok_config.js');
 
 const app = express();
 const server = http.createServer(app);
-const io = require('socket.io')(server);
+const io = require('socket.io')(server, {
+  reconnection: true
+});
 
 let playerList = [];
 let bullets = [];
@@ -29,6 +31,15 @@ io.on('connection', client => {
 
   client.on('pingNotify', (type) => {
     io.emit('pingN', type);
+  })
+
+  client.on('shootBullet', (data) => {
+    client.broadcast.emit('shootB', data);
+    // io.emit('shootB', data);
+  });
+
+  client.on('dealDmg', (data) => {
+    io.to(data.playerID).emit('reciveDmg', data.dmg);
   })
 
   client.on('disconnect', () => {

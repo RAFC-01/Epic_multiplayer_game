@@ -13,6 +13,10 @@ const gravity = 14;
 const fallSpeed = 1;
 const friction = 0.8;
 
+let timeMultiplier = 1;
+
+const DELTA_SPEED_CORRECTION = 140;
+
 let dt = 0;
 
 let stats = new Stats();
@@ -24,21 +28,27 @@ canvas.height = innerHeight;
 
 let floor_level = 700;
 
+// walls
 new Block(0, floor_level, 1980, canvas.height/2, 'green');
-new Block(250, floor_level - 50, 100, 50, 'red');
-new Block(450, floor_level - 100, 100, 50, 'red');
-new Block(905, floor_level - 200, 50, 50, 'red');
-new Block(350, floor_level - 300, 200, 50, 'red');
-new Block(250, floor_level - 499, 50, 200, 'red');
 new Block(0, floor_level - 1000, 10, 1000, 'red');
+new Block(1980, floor_level - 1000, 10, 1000, 'red');
+new Block(0, 0, 1980, 10, 'red');
+
+// other
+new Block(250, floor_level-100, 50, 100, 'red');
+new Block(550, floor_level-150, 50, 150, 'red');
+new Block(650, floor_level-50, 50, 50, 'red');
 
 const player = new Player(100, floor_level - 250);
 
 let lastUpdate = Date.now();
 let reload;
 let shootBullet;
+let dealDmgToPlayer;
 let pingNofity;
 let pingLifeSpan = 1;
+
+let GAME_STATE = 'lobby';
 
 const pingsAudio = {
   0: new Howl({
@@ -47,87 +57,136 @@ const pingsAudio = {
   })
 };
 
+// for testing
+let newDelta = false;
+
 const pingImgs = {};
 pingImgs[0] = new Image();
 pingImgs[0].src = './imgs/missing.png';
+pingImgs[0].onload = () => {
+  console.log('loaded png')
+}
 
 function startGame(name){
   if (name) player.name = name;
-  let socket = io();
-  socket.username = name ? name : socket.id;
-  function animate(){
-    if (!socket) return;
-    stats.begin();
-    let now = Date.now();
-    dt = (now - lastUpdate) / 1000;
-    lastUpdate = now;
-    
-    player.update();
-    
-    drawBackGround();
-    drawBlocks();
-    updatePlayers(socket);
-    updatePartiles();
-    player.draw();
-    drawPings();
-    
-    socket.emit('update', getPlayerInfo(player));
-    
-    stats.end();
-    requestAnimationFrame(animate);
-  }
-  
-  animate();
-  
-  socket.on('reloadPage', () => {
+  try{
 
-    console.log('update in 3 sec!');
+    let socket = io({
+      reconnection: true
+    });
+    socket.username = name ? name : socket.id;
 
-    document.getElementById('updateScreen').style.display = 'flex';
-    let textDiv = document.getElementById('updateCountDown');
-    i = 3;
-    let updateText = 'Updating in '
-    setInterval(() => {
-      i--;
-      textDiv.innerText = updateText + i + '..';
-    },100)
-
-    setTimeout(()=> {
-
-      location.reload();
-    }, 300);
-  });
-  socket.on('updatePlayers', (data) =>{
-    players = data;
-  });
-  socket.on('removePlayer', (data) => {
-    let index = players.indexOf(data);
-    players.splice(index, 1);
-  });
-  reload = () => {
-    socket.emit('reload');
-  }
-
-  socket.on('pingN', pingData => {
-    pings.push(pingData);
-    pingsAudio[pingData.type].play();
-  })
-  pingNofity = (x, y, type = 0) => {
-    let time = Date.now();
-    let data = {x, y, type, time};
-    socket.emit('pingNotify', data);
-  }
-  shootBullet = (x, y, dir, speed) => {
-    let data = {
-      x: x,
-      y: y,
-      dir: dir,
-      speed: speed,
-      id: socket.id,
+    function animate(){
+      if (!socket) return;
+      stats.begin();
+      player.socketId = socket.id;
+      let now = Date.now();
+      dt = (now - lastUpdate) / 1000;
+      dt = newDelta ? newDelta * timeMultiplier : dt * timeMultiplier;
+      lastUpdate = now;
+      
+      player.update();
+      
+      drawBackGround();
+      drawBlocks();
+      updatePlayers(socket);
+      updatePartiles();
+      player.draw();
+      drawPings();
+      
+      socket.emit('update', getPlayerInfo(player));
+      
+      stats.end();
+      requestAnimationFrame(animate);
     }
-    socket.emit('addBullet', data);
-  }
+    
+    animate();
+    
+    socket.on('reloadPage', () => {
+  
+      console.log('update in few sec!');
+  
+      document.getElementById('updateScreen').style.display = 'flex';
+      let textDiv = document.getElementById('updateCountDown');
+      i = 3;
+      let updateText = 'Updating in '
+      setInterval(() => {
+        i--;
+        if (i < 0) i = 0;
+        textDiv.innerText = updateText + i + '..';
+      },100)
+  
+      setTimeout(()=> {
+  
+        location.reload();
+      }, 300);
+    });
+  
+    socket.on('connect_error', ()=>{
+      document.getElementById('LostConnectionScreen').style.display = 'flex';
+    })
 
+    socket.on('updatePlayers', (data) => {
+      players = data;
+      document.getElementById('LostConnectionScreen').style.display = 'none';
+    });
+    socket.on('removePlayer', (data) => {
+      let index = players.indexOf(data);
+      players.splice(index, 1);
+    });
+    reload = () => {
+      socket.emit('reload');
+    }
+  
+    socket.on('pingN', pingData => {
+      createPing(pingData);
+    })
+    pingNofity = (x, y, type = 0) => {
+      let data = {x, y, type};
+      socket.emit('pingNotify', data);
+    }
+    socket.on('shootB', (data) => {
+      createParticle(data);
+    });
+    shootBullet = (x, y, dir, speed, weaponId) => {
+      let data = {
+        x: x,
+        y: y,
+        dir: dir,
+        speed: speed,
+        weaponId: weaponId,
+        id: socket.id,
+      }
+      socket.emit('shootBullet', data);
+    }
+
+    socket.on('reciveDmg', (data) => {
+      player.dealDmg(data);
+    })
+    dealDmgToPlayer = (dmg, playerID) => {
+      // console.log('deal dmg')
+      let data = {
+        dmg, playerID
+      }
+      socket.emit('dealDmg', data);
+    }
+
+    GAME_STATE = 'game';
+
+  }catch (err){
+    console.log(err);
+  }
+}
+
+function createParticle(data){
+  // console.log(data);
+  new Particle(data.x, data.y, data.dir, data.speed, data.id, data.weaponId);
+}
+
+function createPing(data){
+    data.time = Date.now();
+    pings.push(data);
+    pingsAudio[data.type].play();
 }
 
 window.onload = () => {
@@ -156,8 +215,8 @@ function drawPings(){
     ctx.beginPath();
     ctx.drawImage(img, ping.x - img.width / scaleDown / 2, ping.y - img.height / scaleDown / 2, img.width / scaleDown, img.height / scaleDown);
     ctx.closePath();
-
     ping.y -= 15 * dt;
+
 
     let timePassed = timeNow - ping.time; 
     if (timePassed / 1000 > pingLifeSpan){
@@ -178,29 +237,9 @@ function updatePlayers(socket){
     if (user.id != socket.id){
       let m = user.values;
       if (!m) return;
-      // player
-      ctx.beginPath();
-      ctx.fillStyle = m.color;
-      ctx.rect(m.pos.x, m.pos.y, m.size.x, m.size.y);
-      ctx.fill();
-      ctx.closePath();
-
-      //text
-      ctx.beginPath();
-      ctx.font = '15px Arial';
-      let text = m.name ? m.name : 'Unknown user';
-      let textWidth = ctx.measureText(text).width;
-      ctx.fillText(text, m.pos.x + m.size.x / 2 - textWidth / 2, m.pos.y - 5);
-      ctx.closePath();
-
-      // weapon
-      if (m.weaponId){
-        let weapon = WEAPONS[m.weaponId];
-        let scale = WEAPONS[m.weaponId].sizeScale ? WEAPONS[m.weaponId].sizeScale : DEFAULT_SIZE_SCALE; 
-        ctx.beginPath();
-        ctx.drawImage(weapon.img, m.pos.x, m.pos.y, weapon.img.width / scale, weapon.img.height / scale);
-        ctx.closePath();
-      }
+      let otherPlayer = new OtherPlayer(m);
+      // console.log(otherPlayer);
+      otherPlayer.draw();
     }
 
   }
@@ -210,6 +249,10 @@ function getPlayerInfo(pl){
     name: pl.name,
     weaponId: pl.weaponId,
     color: pl.color,
+    weaponAngle: pl.weaponAngle,
+    weaponDegrees: pl.weaponDegrees,
+    hp: pl.hp,
+    maxHp: pl.maxHp,
     pos: {
       x: pl.x,
       y: pl.y,
@@ -242,9 +285,65 @@ function getRandomColor() {
     return color;
   }
 
+  const playerNames =[
+    "Haruka Mizuki",
+    "Kazuki Hoshino",
+    "Yuki Nakamura",
+    "Aya Sakura",
+    "Ryota Kurogane",
+    "Emi Takahashi",
+    "Sora Kobayashi",
+    "Ren Ichinose",
+    "Kaori Yamamoto",
+    "Tatsuya Nakagawa",
+    "Mai Tanaka",
+    "Yuto Suzuki",
+    "Ayame Fujimoto",
+    "Hikari Mori",
+    "Kaito Hayashi",
+    "Yui Aizawa",
+    "Shota Ishikawa",
+    "Mio Kimura",
+    "Daichi Nishimura",
+    "Yukihiro Sato",
+    "Aoi Fujita",
+    "Riku Inoue",
+    "Haruna Yoshida",
+    "Kenta Takahashi",
+    "Sakura Ito",
+    "Yusuke Kobayashi",
+    "Arisa Watanabe",
+    "Shinji Matsumoto",
+    "Nao Suzuki",
+    "Kazumi Honda",
+    "Miku Yamashita",
+    "Ryo Tanaka",
+    "Yui Suzuki",
+    "Riku Matsuda",
+    "Akane Kobayashi",
+    "Kenta Yamamoto",
+    "Misaki Nakajima",
+    "Takumi Sato",
+    "Yukihiro Nakamura",
+    "Asuka Yamaguchi",
+    "Hiroki Nishida",
+    "Yumi Takahashi",
+    "Tatsuya Suzuki",
+    "Ayaka Fujimoto",
+    "Kazuya Kimura",
+    "Mai Kuroki",
+    "Hiroshi Nakagawa",
+    "Saki Honda",
+    "Yusuke Takahashi"
+  ];
+
 document.addEventListener('keydown', (e) => {
   const key = e.key ? e.key.toLowerCase() : 0;
-    if (key != 'f5') e.preventDefault();
+    if (pressedKeys['control'] && GAME_STATE == 'game') {
+      if (key == 'd' || key == 's' || key == 'p'){
+        e.preventDefault();
+      }
+    } 
     
     pressedKeys[key] = 1;
 
@@ -266,9 +365,11 @@ document.addEventListener('mousedown', (e) => {
   let x = e.clientX;
   let y = e.clientY;
 
-  if (pressedKeys['control']) player.tp(x, y);
-  else if (pressedKeys['shift']) pingNofity(x,y);
-  else player.shoot();
+  if (e.button == 0){
+    if (pressedKeys['control']) player.tp(x, y);
+    else if (pressedKeys['shift']) pingNofity(x,y);
+    else player.shooting = true;
+  }
 
   if (e.target.id == 'playBtn'){
     let elems = document.getElementById('inputs').children;
@@ -277,20 +378,29 @@ document.addEventListener('mousedown', (e) => {
     const searchParams = new URLSearchParams(window.location.search);
     Array.from(elems).forEach(elem => {
       if (elem.tagName === 'INPUT'){
-        values[elem.name] = elem.value;
+        if (!elem.value && elem.name == 'name'){
+          let randomName = playerNames[Math.floor(Math.random() * playerNames.length)];
+          if (randomName) elem.value = randomName;
+          else elem.value = 'Unknown';
+        }
         searchParams.set(elem.name, elem.value);
         const updatedSearchString = searchParams.toString();
-
+        
         // Create a new URL with the updated search string
         const newUrl = `${window.location.origin}${window.location.pathname}?${updatedSearchString}`;
-
+        
         // Update the browser history without reloading the page
         window.history.pushState({ path: newUrl }, '', newUrl);
+        
+        values[elem.name] = elem.value;
       }
     })
     disableEnteringScreen(values);
   }
 });
+document.addEventListener('mouseup', (e) => {
+  if (e.button == 0 && player.shooting == true) player.shooting = false;
+})
 
 function approach(current, target, increase)
 {
@@ -311,6 +421,7 @@ function rectCollision(a, b){
 
 function pointInRect(point, rect)
 {
+  if (!point || !rect) return;
   return (point.x >= rect.pos.x &&
           point.x <= rect.pos.x + rect.size.x &&
           point.y >= rect.pos.y &&
