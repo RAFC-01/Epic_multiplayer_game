@@ -18,14 +18,46 @@ body{
     gap: 20px;
     color: white;
 }
-#playBtn{
-    outline: 2px solid white;
-    color: white;
-    width: 200px;
-    height: 50px;
-    font-size: 40px;
+#gameTitle{
+    position: absolute;
+    top: 10vh;
+    font-size: 50px;
     text-transform: uppercase;
+}
+#inputs{
+    display: flex;
+    flex-direction: column;
+    border: 2px solid white;
+    padding: 20px;
     text-align: center;
+    width: 40vw;
+    font-size: 35px;
+    text-transform: uppercase;
+}
+#playerNameInput{
+    width: 20vw;
+    height: 50px;
+    margin: auto;
+    font-size: 30px;
+}
+#nameInputInfo{
+    color: red;
+    font-size: 25px;
+    margin-top: 20px;
+    text-transform: none;
+}
+#playBtn{
+    user-select: none;
+    border: 2px solid white;
+    padding: 20px;
+    width: 40vw;
+    font-size: 40px;
+    text-align: center;
+    text-transform: uppercase;
+}
+#playBtn:hover{
+    background-color: white;
+    color: black;
     cursor: pointer;
 }
 .blackScreen{
@@ -44,6 +76,7 @@ body{
 }
 #deathScreen{
     flex-direction: column;
+    user-select: none;
 }
 #deathText{
     color: red;
@@ -62,4 +95,13 @@ body{
     background-color: white;
     color: black;
     cursor: pointer;
+}
+#yourName{
+    position: fixed;
+    user-select: none;
+    color: white;
+    width: 100%;
+    text-align: center;
+    top: 25px;
+    font-size: 30px;
 }

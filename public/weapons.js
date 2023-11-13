@@ -67,6 +67,10 @@ class Particle{
     }
     draw(){
         // trail
+        let pos = {
+            x: this.x - CAMERA.offset.x,
+            y: this.y - CAMERA.offset.y
+        }
         if (this.hasTrail){
             let trailSize = this.size-1 > 0 ? this.size-1 : this.size;
             for (let i = 0; i < this.trail.length; i++){
@@ -74,7 +78,7 @@ class Particle{
                 let alpha = i / this.trail.length;
                 ctx.beginPath();
                 ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
-                ctx.arc(t.x, t.y, trailSize, 0, 360, false);
+                ctx.arc(t.x - CAMERA.offset.x, t.y - CAMERA.offset.y, trailSize, 0, 360, false);
                 ctx.fill();
                 ctx.closePath();
             }
@@ -82,7 +86,7 @@ class Particle{
         // particle
         ctx.beginPath();
         ctx.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
-        ctx.arc(this.x, this.y, this.size, 0, 360, false);
+        ctx.arc(pos.x, pos.y, this.size, 0, 360, false);
         ctx.fill();
         ctx.closePath();
     }
@@ -111,6 +115,7 @@ class Particle{
         }
         for (let i = 0; i < players.length; i++){
             let playerRect = players[i].values;
+            if (!playerRect) continue;
             if (this.shooterId == players[i].id || players[i].values.isDead) continue;
             if (pointInRect(point, playerRect)){
                 collision = {target: players[i].id};
@@ -181,7 +186,7 @@ class SpecialParticle{
     draw(){
         ctx.beginPath();
         ctx.fillStyle = this.color;
-        ctx.arc(this.x, this.y, this.size, 0, 360, false);
+        ctx.arc(this.x - CAMERA.offset.x, this.y - CAMERA.offset.y, this.size, 0, 360, false);
         ctx.fill();
         ctx.closePath();
     }
@@ -240,6 +245,7 @@ class SpecialParticle{
                         x: this.dir.x * this.knockback,
                         y: this.dir.y * this.knockback
                     }
+                    console.log(knockbackValue);
                     knockbackPlayer(knockbackValue.x, knockbackValue.y, collision.target);                   
 
                     // player.dealDmg(-this.dmg); // heal hp

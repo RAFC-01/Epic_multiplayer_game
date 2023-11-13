@@ -21,22 +21,34 @@ class Player extends CharacterEntity{
         this.fallSideAcceleration = 10;
         this.directionChangeMult = 1.6;
         this.jumpSpeed = -5;
+        this.godMode = true;
 
         this.changeWeapon(this.weaponId);
+
+        this.changeNameDiv(name);
 
         this.gunImage = this.weapon.img;
 
     }
+    changeNameDiv(name){
+        let div = document.getElementById('yourName');
+        div.style.display = 'block';
+        div.innerText = 'Nick: '+name;
+    }
     update(){
         // weapon
         if (this.isDead) return;
+
         let gunPos = {
             x: this.x + this.size.x / 2,
             y: this.y + this.size.y / 2.5
         }
 
-        const mouseX = mousePos.x - canvas.getBoundingClientRect().left;
-        const mouseY = mousePos.y - canvas.getBoundingClientRect().top;
+        this.x = Math.floor(this.x);
+        this.y = Math.floor(this.y);
+
+        const mouseX = mousePos.x + CAMERA.offset.x - canvas.getBoundingClientRect().left;
+        const mouseY = mousePos.y + CAMERA.offset.y - canvas.getBoundingClientRect().top;
     
         this.weaponAngle = Math.atan2(mouseY - gunPos.y, mouseX - gunPos.x);
         this.weaponDegrees =  this.weaponAngle * (180 / Math.PI);
@@ -195,12 +207,6 @@ class Player extends CharacterEntity{
     tp(x, y){
         this.x = x - this.size.x / 2;
         this.y = y - this.size.y / 2;
-    }
-    showInteractionKey(){
-        ctx.imageSmoothingEnabled = false;
-        ctx.beginPath();
-        ctx.drawImage(loadedImgs['interactionKey'], this.x+60, this.y-40, 48, 48);
-        ctx.closePath();
     }
     interact(){
         if (this.interacionWith) this.interacionWith.interact();

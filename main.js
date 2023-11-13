@@ -50,6 +50,15 @@ io.on('connection', client => {
     client.broadcast.emit('shootSpecialRecive', data);
   })
 
+  client.on('spectatePlayer', (data) => {
+    if (data.all){
+      client.broadcast.emit('spectateRecive', data);
+    }else{
+      if (!data.targetPlayer) return;
+      io.to(data.targetPlayer).emit('spectateRecive', data);
+    }
+  })
+
   client.on('disconnect', () => {
     console.log('user disconnected');
     let player = getPlayerById(client.id);

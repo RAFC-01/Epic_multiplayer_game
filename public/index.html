@@ -6,6 +6,7 @@
     <script src="/socket.io/socket.io.js" defer></script>
     <script src="libs/howler.min.js" defer></script>
     <script src="entity.js" defer></script>
+    <script src="map.js" defer></script>
     <script src="items.js" defer></script>
     <script src="otherPlayer.js" defer></script>
     <script src="fpsMeter.js" defer></script>
@@ -31,12 +32,15 @@
         <div id="updateCountDown">Updating in 3..</div>
     </div>
     <div id="enteringScreen">
+        <div id="gameTitle">Epic Multiplayer Game</div>
         <div id="inputs">
-            <label for="name">Name</label>
-            <input type="text" name="name">
+            <p>Choose your name!</p>
+            <input type="text" name="name" autocomplete="nickname" id="playerNameInput">
+            <div id="nameInputInfo">** Name is not required! (just hit play) **</div>
         </div>
         <div id="playBtn">Play</div>
     </div>
+    <div id="yourName" style="display: none;">Nick: </div>
     <canvas></canvas>
 </body>
 </html>

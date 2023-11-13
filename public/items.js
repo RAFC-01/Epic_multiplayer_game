@@ -10,7 +10,16 @@ class Structure{
     draw(){
         if (!this.image) return;
         ctx.beginPath();
-        ctx.drawImage(this.image, this.x, this.y, this.size.x, this.size.y);
+        if (this.orientation === 0){
+            ctx.save();
+            ctx.translate(this.x + this.size.x / 2, this.y + this.size.y / 2);
+            ctx.scale(-1, 1);
+            ctx.drawImage(this.image, -this.size.x / 2 + CAMERA.offset.x, -this.size.y / 2 + CAMERA.offset.y, this.size.x, this.size.y);
+
+            ctx.restore();
+        }else{
+            ctx.drawImage(this.image, this.x - CAMERA.offset.x, this.y - CAMERA.offset.y, this.size.x, this.size.y);
+        }
         ctx.closePath();
     }
     update(){
@@ -52,39 +61,47 @@ class Spike extends Structure{
 }
 
 class Cannon extends Structure{
-    constructor(x, y, size){
+    constructor(x, y, size, o = 1){
         let image = loadedImgs['cannon'];
         let name = 'Cannon';
         super(x, y, size, name, image);
         this.canCollide = true;
         this.cooldown = 5000;
-        this.orientation = '1';
+        this.orientation = o;
         this.lastTimeShoot = 0;
     }
     collision(){
-        player.showInteractionKey();
         player.interacionWith = this;
     }
     noCollision(){
-        player.interacionWith = null;
+        if (player.interacionWith == this) player.interacionWith = null;
     }
     interact(){
         let now = Date.now();
         if (now - this.lastTimeShoot < this.cooldown) return;
         let dir;
+        let bulletPos;
         if (this.orientation){
             dir = {
                 x: 0.9313908626506681,
                 y: -0.36402068755888645
+            };
+            bulletPos = {
+                x: this.x+this.image.width, 
+                y: this.y+20,
             }
         }else{
             dir = {
                 x: -0.9313908626506681,
                 y: -0.36402068755888645
-            }            
+            };
+            bulletPos = {
+                x: this.x, 
+                y: this.y+20,
+            }
         }
-        new SpecialParticle(this.x+this.image.width, this.y+20, 20, dir, 'red', 15, player.socketId);
-        shootSpecial(this.x+this.image.width, this.y+20, 20, dir, 'red', 15, player.socketId);
+        new SpecialParticle(bulletPos.x, bulletPos.y, 20, dir, 'red', 25, player.socketId);
+        shootSpecial(bulletPos.x, bulletPos.y, 20, dir, 'red', 25, player.socketId);
         
         this.lastTimeShoot = Date.now();
     }

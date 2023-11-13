@@ -5,15 +5,19 @@ class CharacterEntity{
         this.hp = 10;
         this.maxHp = 10;
         this.lastShoot = 0;
-        this.groundedCooldown = 110;
+        this.groundedCooldown = 50;
     }
     drawWeapon() {
         // ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.gunImage = WEAPONS[this.weaponId].img;
         if (!this.gunImage) return;
+        let pos = {
+            x: this.x - CAMERA.offset.x,
+            y: this.y - CAMERA.offset.y
+        }
         let gunPos = {
-            x: this.x + this.size.x / 2,
-            y: this.y + this.size.y / 2.5
+            x: pos.x + this.size.x / 2,
+            y: pos.y + this.size.y / 2.5
         }
 
         let upsideDownThreshold = 90;
@@ -44,7 +48,7 @@ class CharacterEntity{
             x: this.x + this.size.x / 2,
             y: this.y + this.size.y / 2.5
         }
-        let angle = Math.atan2(mousePos.y - gunPos.y, mousePos.x - gunPos.x);
+        let angle = Math.atan2(mousePos.y + CAMERA.offset.y - gunPos.y, mousePos.x + CAMERA.offset.x - gunPos.x);
         let x = Math.cos(angle);
         let y = Math.sin(angle);
 
@@ -58,20 +62,25 @@ class CharacterEntity{
     }
     drawHpBar(){
         // background bar
+        let pos = {
+            x: this.x - CAMERA.offset.x,
+            y: this.y - CAMERA.offset.y
+        }
         ctx.beginPath();
-        ctx.fillStyle = 'blue';
-        ctx.rect(this.x, this.y - 30, this.size.x, 5);
+        ctx.fillStyle = 'red';
+        ctx.rect(pos.x, pos.y - 30, this.size.x, 5);
         ctx.fill();
         ctx.closePath();
         // hp bar
         ctx.beginPath();
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = 'green';
         let size = this.size.x * (this.hp / this.maxHp);
-        ctx.rect(this.x, this.y - 30, size, 5);
+        ctx.rect(pos.x, pos.y - 30, size, 5);
         ctx.fill();
         ctx.closePath();
     }
     dealDmg(amm){
+        if (this.godMode) return;
         this.hp -= amm;
         if (this.hp < 0) this.hp = 0;
         if (this.hp > this.maxHp) this.hp = this.maxHp;
@@ -80,9 +89,13 @@ class CharacterEntity{
     }
     draw(){
         if (this.isDead) return;
+        let pos = {
+            x: this.x - CAMERA.offset.x,
+            y: this.y - CAMERA.offset.y
+        }
         ctx.beginPath();
         ctx.fillStyle = this.color;
-        ctx.rect(this.x, this.y, this.size.x, this.size.y);
+        ctx.rect(pos.x, pos.y, this.size.x, this.size.y);
         ctx.fill();
         ctx.closePath();
         
@@ -91,12 +104,19 @@ class CharacterEntity{
         ctx.font = '20px Arial';
         let text = this.display;
         let textWidth = ctx.measureText(text).width;
-        ctx.fillText(text, this.x + (this.size.x - textWidth) / 2, this.y - 5);        
+        ctx.fillText(text, pos.x + (this.size.x - textWidth) / 2, pos.y - 5);        
         ctx.closePath();
 
         this.drawWeapon();
         
         this.drawHpBar();
+
+        if (this.interacionWith){
+            ctx.imageSmoothingEnabled = false;
+            ctx.beginPath();
+            ctx.drawImage(loadedImgs['interactionKey'], pos.x+60, pos.y-40, 48, 48);
+            ctx.closePath();
+        } 
     }
     kill(){
         this.hp = 0;

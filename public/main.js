@@ -15,6 +15,7 @@ const friction = 0.8;
 
 const STRUCTURES = [];
 const SPECIAL_PARTICLES = [];
+const TILES = [];
 
 let timeMultiplier = 1;
 
@@ -29,9 +30,8 @@ document.body.appendChild( stats.dom );
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-let floor_level = 700;
-
 let spawnPoint = {x: 100, y: floor_level - 250};
+let MAP_SIZE = {x: 0, y: 0};
 
 let player;
 
@@ -42,6 +42,7 @@ let dealDmgToPlayer;
 let pingNofity;
 let knockbackPlayer;
 let shootSpecial;
+let makeSpectate;
 let pingLifeSpan = 1;
 
 let pingTypes = {
@@ -59,6 +60,7 @@ let newDelta = false;
 
 let loadedImgs = {};
 
+let CAMERA;
 
 function initializePingAudio(){
   pingsAudio[0] = loadedAudio['missing'];
@@ -66,7 +68,7 @@ function initializePingAudio(){
 
 function loadAssets(next){
   document.getElementById('loadingScreen').style.display = 'flex';
-  const assetsToLoad = ['interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
+  const assetsToLoad = ['box', 'interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
   const soundsToLoad = ['missing'];
 
   let loadedStatus = {
@@ -118,6 +120,7 @@ function startGame(name){
   initializePingAudio();
   createWeaponImgs();
   player = new Player(spawnPoint.x, spawnPoint.y, name);
+  CAMERA = new Camera();
   try{
     document.getElementById('loadingScreen').style.display = 'none';
     let socket = io({
@@ -135,9 +138,11 @@ function startGame(name){
       lastUpdate = now;
       
       player.update();
+      CAMERA.update();
       
       drawBackGround();
       drawBlocks();
+      drawTiles();
       drawStructures();
       updatePlayers(socket);
       updatePartiles();
@@ -243,14 +248,27 @@ function startGame(name){
         // console.log(data);
         socket.emit('shootSpecial', data);
     }
+
+    socket.on('spectateRecive', (data) => {
+      if (data.reset){
+        CAMERA.canChangeTarget = true;
+        CAMERA.reset();
+      }else{
+        CAMERA.changeTarget(data.playerID);
+        if (data.all) CAMERA.canChangeTarget = false;
+      }
+    })
+
+    makeSpectate = (playerID, targetPlayer, all, reset) => {
+      let data = {reset, playerID, targetPlayer, all};
+      socket.emit('spectatePlayer', data);
+    }
     GAME_STATE = 'game';
 
   }catch (err){
     console.log(err);
   }
 }
-
-let invisibleColor = 'rgba(0, 0, 0, 0)';
 
 function createSpecialParticle(x, y, size, dir, color, speed, shooterId){
   new SpecialParticle(x, y, size, dir, color, speed, shooterId);
@@ -263,37 +281,76 @@ function updateSpecialPartiles(){
     p.update();
   }
 }
-
+function drawTiles(){
+  for (let i = 0; i < TILES.length; i++){
+    let t = TILES[i];
+    t.draw();
+  }
+}
 function drawMap(){
   // walls
-  new Block(0, floor_level, 1980, canvas.height/2, 'green');
-  new Block(0, floor_level - 1000, 10, 1000, invisibleColor);
-  new Block(1980, floor_level - 1000, 10, 1000, invisibleColor);
-  new Block(0, 0, 1980, 10, invisibleColor);
+  // new Block(0, floor_level, 1980, canvas.height/2, 'green');
+  // new Block(0, floor_level - 1000, 10, 1000, invisibleColor);
+  // new Block(1980, floor_level - 1000, 10, 1000, invisibleColor);
+  // new Block(0, 0, 1980, 10, invisibleColor);
   
-  // other
-  new Block(250, floor_level-50, 50, 50, 'red');
-  // new Block(550, floor_level-150, 50, 150, 'red');
-  new Block(950, floor_level-50, 50, 50, 'red');
-  new Block(60, floor_level-450, 320, 50, 'red');
+  // // other
+  // new Block(250, floor_level-50, 50, 50, 'red');
+  // // new Block(550, floor_level-150, 50, 150, 'red');
+  // new Block(950, floor_level-50, 50, 50, 'red');
+  // new Block(60, floor_level-450, 320, 50, 'red');
   
-  new Spike(300, floor_level-50, {x: 50, y:50});
-  new Spike(350, floor_level-50, {x: 50, y:50});
-  new Spike(400, floor_level-50, {x: 50, y:50});
-  new Spike(450, floor_level-50, {x: 50, y:50});
-  new Spike(500, floor_level-50, {x: 50, y:50});
-  new Spike(550, floor_level-50, {x: 50, y:50});
-  new Spike(600, floor_level-50, {x: 50, y:50});
-  new Spike(650, floor_level-50, {x: 50, y:50});
-  new Spike(700, floor_level-50, {x: 50, y:50});
-  new Spike(750, floor_level-50, {x: 50, y:50});
-  new Spike(800, floor_level-50, {x: 50, y:50});
-  new Spike(850, floor_level-50, {x: 50, y:50});
-  new Spike(900, floor_level-50, {x: 50, y:50});
+  // new Spike(300, floor_level-50, {x: 50, y:50});
+  // new Spike(350, floor_level-50, {x: 50, y:50});
+  // new Spike(400, floor_level-50, {x: 50, y:50});
+  // new Spike(450, floor_level-50, {x: 50, y:50});
+  // new Spike(500, floor_level-50, {x: 50, y:50});
+  // new Spike(550, floor_level-50, {x: 50, y:50});
+  // new Spike(600, floor_level-50, {x: 50, y:50});
+  // new Spike(650, floor_level-50, {x: 50, y:50});
+  // new Spike(700, floor_level-50, {x: 50, y:50});
+  // new Spike(750, floor_level-50, {x: 50, y:50});
+  // new Spike(800, floor_level-50, {x: 50, y:50});
+  // new Spike(850, floor_level-50, {x: 50, y:50});
+  // new Spike(900, floor_level-50, {x: 50, y:50});
 
-  new Cannon(0, floor_level-212, {x: 300, y:212})
+  // new Cannon(0, floor_level-212, {x: 300, y:212});
+  let defaultSize = {x: 50, y: 50};
+  let defaultColor = 'red';
+  for (let i = 0; i < MAP.length; i++){
+    let data = MAP[i];
+    if (!data.width) data.width = defaultSize.x;
+    if (!data.height) data.height = defaultSize.y;
+    if (!data.color) data.color = defaultColor;
+
+    let size = {
+      x: data.width,
+      y: data.height
+    }
+    
+    MAP_SIZE.x = MAP_SIZE.x < data.x+size.x ? data.x+size.x : MAP_SIZE.x;
+    MAP_SIZE.y = MAP_SIZE.y < data.y+size.y ? data.y+size.y : MAP_SIZE.y;
+
+    if (data.type == 'block'){
+      new Tile(data.x, data.y, size, data.color, 1);
+    }
+    if (data.type == 'tile'){
+      if (!data.name) data.name = 'box';
+      new Tile(data.x, data.y, size, data.name);
+    }
+    if (data.type == 'spike'){
+      new Spike(data.x, data.y, size);
+    }
+    if (data.type == 'cannon'){
+      new Cannon(data.x, data.y, size, data.o);
+    }
+  }
+
 }
 
+function startEditor(){
+  player.godMode = true;
+}
 
 function createParticle(data){
   // console.log(data);
@@ -335,7 +392,7 @@ function drawPings(){
     let pingType = pingTypes[ping.id];
     let img = loadedImgs[pingType];
     ctx.beginPath();
-    ctx.drawImage(img, ping.x - img.width / scaleDown / 2, ping.y - img.height / scaleDown / 2, img.width / scaleDown, img.height / scaleDown);
+    ctx.drawImage(img, ping.x - CAMERA.offset.x - img.width / scaleDown / 2, ping.y - CAMERA.offset.y - img.height / scaleDown / 2, img.width / scaleDown, img.height / scaleDown);
     ctx.closePath();
     ping.y -= 15 * dt;
 
@@ -507,8 +564,12 @@ document.addEventListener('mousedown', (e) => {
 
   if (e.button == 0){
     if (player){
-      if (pressedKeys['control']) player.tp(x, y);
-      else if (pressedKeys['shift']) pingNofity(x,y);
+      let pos = {
+        x: x + CAMERA.offset.x,
+        y: y + CAMERA.offset.y
+      }
+      if (pressedKeys['control']) player.tp(pos.x, pos.y);
+      else if (pressedKeys['shift']) pingNofity(pos.x,pos.y);
       else player.shooting = true;
     }
   }
@@ -572,4 +633,67 @@ function pointInRect(point, rect)
           point.y >= rect.pos.y &&
           point.y <= rect.pos.y + rect.size.y);
 }
+function lerp(start, end, t) {
+  return start * (1 - t) + end * t;
+}
+class Camera{
+  constructor(){
+    this.offset = {
+      x: 0, y: 0
+    }
+    this.target = player;
+    this.minLerpFactor = 0.01;
+    this.maxLerpFactor = 0.05;
+    this.targetId = player.socketId;
+    this.canChangeTarget = true;
+  }
+  update(){
 
+    if (this.targetId) this.target = getPlayerPos(this.targetId);
+
+    let size = this.target.size ? this.target.size : {x: 0, y: 0};
+    let x = this.target.x + size.x / 2;
+    let y = this.target.y + size.y / 2;
+    // moving x
+    // this.offset.x = x - innerWidth / 2;
+
+    // Calculate the distance between the camera and the target
+    let distanceX = Math.abs(x - this.offset.x - innerWidth / 2);
+
+    // Calculate the lerpFactor based on distance
+    let clampedDistanceX = Math.max(1, Math.min(innerWidth / 2, distanceX));
+    let normalizedDistanceX = clampedDistanceX / (innerWidth / 2);
+    let lerpFactor = this.minLerpFactor + normalizedDistanceX * (this.maxLerpFactor - this.minLerpFactor)
+
+    this.offset.x = lerp(this.offset.x, x - innerWidth / 2, lerpFactor);
+    // if (this.offset.x < innerWidth / 2) this.offset.x = 0;
+    // if (this.offset.x+10 > MAP_SIZE.x - innerWidth / 2) this.offset.x = MAP_SIZE.x - innerWidth - 10;
+    if (this.offset.x < 0)  this.offset.x = 0;
+    else if (this.offset.x + innerWidth > MAP_SIZE.x - 10) this.offset.x = MAP_SIZE.x - innerWidth - 10;
+  }
+  changeTarget(id){
+    if (!this.canChangeTarget) return;
+    this.targetId = id;
+  }
+  changeTargetPos(x, y){
+    if (!this.canChangeTarget) return;
+    this.targetId = null;
+    this.target = {x: x, y: y}
+  }
+  reset(){
+    if (!this.canChangeTarget) return;
+    this.targetId = null;
+    this.target = player;
+  }
+}
+function getPlayerPos(playerID){
+  if (playerID == player.socketId) return player;
+  for (let i = 0; i < players.length; i++){
+    if (playerID == players[i].id) return {
+      x: players[i].values.pos.x,
+      y: players[i].values.pos.y,
+      size: players[i].values.size
+    }
+  }
+  return {x: 0, y: 0}
+}
