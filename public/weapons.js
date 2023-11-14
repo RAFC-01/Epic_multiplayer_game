@@ -5,6 +5,7 @@ const DEFAULT_BULLET_COLOR = {r: 255, g: 0, b: 0};
 const DEFAULT_BULLET_SIZE = 3;
 const BULLET_ACCELERATION = 5;
 const DEFAULT_WEAPON_DMG = 1;
+const DEFAULT_WEAPON_HEAL = 0;
 const DEFAULT_WEAPON_COOLDOWN = 400; // ms
 const DEFAULT_WEAPON_TRAIL_STATE = true;
 const DEFAULT_WEAPON_DRAG = 2;
@@ -33,11 +34,19 @@ const WEAPONS = {
         dmg: 2,
         cooldown: 300,
         soundName: 'gun_shot'
+    },
+    4: {
+        name: 'heal-gun',
+        imageName: 'heal_gun',
+        heal: 5,
+        dmg: 0,
+        cooldown: 300,
+        knockback: 0,
     }
 }
 
 function createWeaponImgs(){
-    let weaponsIDs = [1, 21, 3];
+    let weaponsIDs = Object.keys(WEAPONS);
     for (let i = 0; i < weaponsIDs.length; i++){
         let id = weaponsIDs[i];
         WEAPONS[id].img = loadedImgs[WEAPONS[id].imageName];
@@ -66,7 +75,11 @@ class Particle{
         this.shooterId = shooterId;
         this.trail = [];
         this.trailLength = 5;
-        if (this.weapon.sound) this.weapon.sound.play();
+        if (this.weapon.sound){
+            loadedAudio['gun_shot'].stop();
+            this.weapon.sound.play();
+        } 
+            
         PARTICLES.push(this);
     }
     draw(){
@@ -173,7 +186,7 @@ class SpecialParticle{
         this.speed = speed;
         this.shooterId = shooterId;
         this.knockback = speed;
-        this.dmg = 50;
+        this.dmg = 500;
         this.vel = {
             x: 0, y: 0
         }
@@ -215,6 +228,7 @@ class SpecialParticle{
 
         for (let i = 0; i < players.length; i++){
             let playerRect = players[i].values;
+            if (!playerRect) continue;
             if (players[i].values.isDead) continue;
             if (rectCollision(particleRect, playerRect)){
                 collision = {target: players[i].id};

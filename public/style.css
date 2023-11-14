@@ -21,7 +21,7 @@ body{
 #gameTitle{
     position: absolute;
     top: 10vh;
-    font-size: 50px;
+    font-size: 5vw;
     text-transform: uppercase;
 }
 #inputs{
@@ -46,19 +46,89 @@ body{
     margin-top: 20px;
     text-transform: none;
 }
-#playBtn{
+.btn{
     user-select: none;
     border: 2px solid white;
     padding: 20px;
-    width: 40vw;
+    width: 30vw;
+    max-width: 600px;
     font-size: 40px;
     text-align: center;
     text-transform: uppercase;
+
 }
-#playBtn:hover{
+.btn:hover{
     background-color: white;
     color: black;
     cursor: pointer;
+}
+.enteringScreenSection{
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+}
+#enteringScreen_class{
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+}
+#classSelection{
+    display: flex;
+    gap: 20px;
+}
+.classSelectionBtn{
+    border: 2px solid white;
+    user-select: none;
+    -webkit-user-drag: none;
+    padding: 10px 0px 10px 0px;
+    cursor: pointer;
+    background-color: black;
+    width: 12vw;
+    min-width: 100px;
+    aspect-ratio: 1/1;
+}
+.classSelectionBtn[data-selected='true']{
+    border: 2px solid black;
+    filter: invert(100%) brightness(100%) contrast(100%);    
+}
+.classSelectionBtn > img {
+    pointer-events: none;
+}
+.classSelectionBtn:hover{
+    transition: 0.5s;
+    border: 2px solid black;
+    filter: invert(100%) brightness(100%) contrast(100%);
+}
+#classInfoBox{
+    border: 2px solid white;
+    min-width: 400px;
+    width: 41vw;
+    height: 150px;
+    text-wrap: wrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    display: none;
+}
+#classBoxChamp{
+    text-wrap: wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 60%;
+    padding: 20px;
+    height: 80px;
+    border-right: 2px solid white;
+}
+#classBoxWeapon{
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#classSpaceMaker{
+    height: 155px;
 }
 .blackScreen{
     position: fixed;
@@ -157,4 +227,83 @@ body{
     align-items: center;
     color: white;
     font-size: 4vw;
+    user-select: none;
+}
+#tabScreen{
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+}
+#tabTable{
+    color: white;
+    width: 600px;
+    height: 400px;
+    border: 2px solid #000000e0;
+    background-color: #00000098;
+    padding: 10px;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+}
+#tabConetent{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-top: 10px;
+}
+.tabSection{
+    border-left: 2px solid red;
+    border-right: 2px solid red;
+    width: 100%;
+    height: 50%;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.tabSection:nth-child(1){
+    border-left: 2px solid blue;
+    border-right: 2px solid blue;    
+}
+#tab_playerInfo{
+    border-bottom: 2px solid white;
+    padding-bottom: 5px;
+}
+.tab_player{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 10px;
+}
+.tabCell{
+    border-right: 2px solid white;
+    padding-right: 5px;
+    height: 28px;
+    width: 150px;
+    text-wrap: nowrap;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+.coloredBox{
+    width: 28px;
+    height: 28px;
+}
+.tab_player_kills{
+    width: 60px;
+}
+.tab_player_deaths{
+    width: 80px;
+}
+.tab_player_dominating{
+    width: 105px;
+}
+.tab_player_class{
+    width: 75px;
 }

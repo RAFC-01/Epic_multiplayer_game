@@ -8,6 +8,7 @@ class CharacterEntity{
         this.groundedCooldown = 50;
         this.kills = 0;
         this.deaths = 0;
+        this.dominating = 0;
     }
     drawWeapon() {
         // ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -127,6 +128,7 @@ class CharacterEntity{
         this.vel.x = 0;
         this.vel.y = 0;
         document.getElementById('deathScreen').style.display = 'flex';        
+        loadedAudio['death_sound'].play();
         this.deaths++;
         this.killStreak = 0;
         // console.log(attacker);

@@ -10,7 +10,6 @@ const io = require('socket.io')(server, {
 });
 
 let playerList = [];
-let bullets = [];
 
 io.on('connection', client => {
   console.log('user connected '+client.id);
@@ -61,6 +60,10 @@ io.on('connection', client => {
       if (!data.targetPlayer) return;
       io.to(data.targetPlayer).emit('spectateRecive', data);
     }
+  })
+
+  client.on('bigMessage', (data) => {
+    client.broadcast.emit('reciveBigMessage', data);
   })
 
   client.on('disconnect', () => {

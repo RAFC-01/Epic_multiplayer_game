@@ -18,6 +18,17 @@
     <title>Document</title>
 </head>
 <body>
+    <div id="tabScreen">
+        <div id="tabTable">
+            <div id="tab_playerInfo">
+                <div id="tab_playerName"></div>
+            </div>
+            <div id="tabConetent">
+                <div class="tabSection" id="blueTeam"></div>
+                <div class="tabSection" id="redTeam"></div>
+            </div>
+        </div>
+    </div>
     <div id="bigMessageBox">
         <div id="bigMessage"></div>
     </div>
@@ -38,14 +49,35 @@
     </div>
     <div id="enteringScreen">
         <div id="gameTitle">Epic Multiplayer Game</div>
-        <div id="inputs">
-            <p>Choose your name!</p>
-            <input type="text" name="name" autocomplete="nickname" id="playerNameInput">
-            <div id="nameInputInfo">** Name is not required! (just hit play) **</div>
+        <div id="enteringScreen_name" class="enteringScreenSection">
+            <div id="inputs">
+                <p>Choose your name!</p>
+                <input type="text" name="name" autocomplete="nickname" id="playerNameInput">
+                <div id="nameInputInfo">** Name is not required! (just hit play) **</div>
+            </div>
+            <div class="btn" id="nextBtn" data-id="0">Next</div>                
         </div>
-        <div id="playBtn">Play</div>
+        <div id="enteringScreen_class" class="enteringScreenSection">
+            <p style="text-transform: uppercase; font-size: 30px;">Select your class!</p>
+            <div id="classSelection">
+                <div class="classSelectionBtn" data-name="tank">
+                    <img src="imgs/tank_class.png" width="100%" height="100%" draggable="false" />
+                </div>
+                <div class="classSelectionBtn" data-name="dmg">
+                    <img src="imgs/dmg_class.png" width="100%" height="100%" draggable="false" />
+                </div>
+                <div class="classSelectionBtn" data-name="heal">
+                    <img src="imgs/heal_class.png" width="100%" height="100%" draggable="false" />
+                </div>
+            </div>
+            <div id="classInfoBox">
+                <div id="classBoxChamp"></div>
+                <div id="classBoxWeapon"></div>
+            </div>
+            <div class="btn" id="playBtn" data-id="1">Next</div>    
+            <div id="classSpaceMaker"></div>
+        </div>
     </div>
-    <div id="yourName" style="display: none;">Nick: </div>
     <canvas></canvas>
 </body>
 </html>

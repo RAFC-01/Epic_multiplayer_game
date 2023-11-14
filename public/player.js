@@ -1,7 +1,8 @@
 class Player extends CharacterEntity{
-    constructor(x, y, name){
+    constructor(x, y, values){
         super();
-        this.name = name ? name : 'Unknown';
+        this.name = values.name ? values.name : 'Unknown';
+        this.class = values.class ? values.class : 'dmg';
         this.display = 'You';
         this.x = x;
         this.y = y;
@@ -26,15 +27,15 @@ class Player extends CharacterEntity{
 
         this.changeWeapon(this.weaponId);
 
-        this.changeNameDiv(name);
+        // this.changeNameDiv(name);
 
         this.gunImage = this.weapon.img;
 
     }
     changeNameDiv(name){
-        let div = document.getElementById('yourName');
+        let div = document.getElementById('tab_playerInfo');
         div.style.display = 'block';
-        div.innerText = 'Nick: '+name;
+        div.innerText = name;
     }
     update(){
         // weapon
@@ -213,12 +214,14 @@ class Player extends CharacterEntity{
         if (this.interacionWith) this.interacionWith.interact();
     }
     confirmKill(){
-        if (this.killStreak > 4){
-            this.killStreak = 0;
-        } 
+        if (this.killStreak > 4) this.killStreak = 0; 
         this.playKillSound();
         this.kills++;
         this.killStreak++;
+        if (this.killStreak == 5) {
+            this.dominating++;
+            bigMessage(0, this.name);
+        }
     }
     playKillSound(){
         // stop all kill audio

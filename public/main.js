@@ -8,6 +8,7 @@ const pings = [];
 
 const blocks = [];
 const pressedKeys = {};
+const choosenValues = {};
 
 const gravity = 14;
 const fallSpeed = 1;
@@ -16,6 +17,27 @@ const friction = 0.8;
 const STRUCTURES = [];
 const SPECIAL_PARTICLES = [];
 const TILES = [];
+
+const classesInfo = {
+  'tank':{
+    hp: 50,
+    weaponId: 1,
+    knockbackRes: 5,
+    desc: 'Unit has a close range weapon, (shield) and (knockback resistance)'
+  },
+  'dmg':{
+    hp: 10,
+    weaponId: 1,
+    knockbackRes: 0,
+    desc: 'Unit has a long/close range weapon and (low hp), but (heals to full hp on kill)'
+  },
+  'heal': {
+    hp: 20,
+    weaponId: 4,
+    knockbackRes: -2,
+    desc: 'Unit has a heal gun that allows you to heal (allies) as well as (enemies)'
+  }
+}
 
 let timeMultiplier = 1;
 
@@ -44,6 +66,7 @@ let knockbackPlayer;
 let shootSpecial;
 let makeSpectate;
 let sendNotification;
+let sendBigMessage;
 let pingLifeSpan = 1;
 
 let pingTypes = {
@@ -71,8 +94,8 @@ function initializePingAudio(){
 
 function loadAssets(next){
   document.getElementById('loadingScreen').style.display = 'flex';
-  const assetsToLoad = ['box', 'interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
-  const soundsToLoad = ['5_kills','4_kills','3_kills','2_kills','1_kills','missing', 'gun_shot', 'gun_hit'];
+  const assetsToLoad = ['heal_gun', 'dmg_class','tank_class','dmg_class','box', 'interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
+  const soundsToLoad = ['death_sound','click','5_kills','4_kills','3_kills','2_kills','1_kills','missing', 'gun_shot', 'gun_hit'];
 
   let loadedStatus = {
     img: false,
@@ -117,12 +140,13 @@ function loadAssets(next){
 
 let FPS_LIMIT = 0;
 
-function startGame(name){
+function startGame(){
   drawMap();
   initializeItems();
-  initializePingAudio();
+  initializePingAudio();  
   createWeaponImgs();
-  player = new Player(spawnPoint.x, spawnPoint.y, name);
+  document.getElementById('tab_playerName').innerHTML = choosenValues.name;
+  player = new Player(spawnPoint.x, spawnPoint.y, choosenValues);
   CAMERA = new Camera();
 
   // createNotification(1, {playerName: name});
@@ -280,9 +304,17 @@ function startGame(name){
     sendNotification = (type, data) => {
       socket.emit('notify', {type, data})
     }
+
+    socket.on('reciveBigMessage', (data) => {
+      bigMessage(data.type, data.player, false);      
+    });
+
+    sendBigMessage = (type, player) => {
+      socket.emit('bigMessage', {type, player});
+    }
     GAME_STATE = 'game';
 
-    createNotification(0, {playerName: name});
+    createNotification(0, {playerName: choosenValues.name});
   
   }catch (err){
     console.log(err);
@@ -389,20 +421,30 @@ window.onload = () => {
   const params = new URLSearchParams(search);
   let name = params.get('name');
   if (!name){
-    document.getElementById('enteringScreen').style.display = 'flex';
+    loadAssets(()=> {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('enteringScreen').style.display = 'flex';
+      showNameSelectionScreen();
+    })
   }else{
       loadAssets(() => {
-        startGame(name);
+        choosenValues.name = name;
+        startGame();
       });
   }
 
 }
+function showClassSelectionScreen(){
+  document.getElementById('enteringScreen_name').style.display = 'none';
+  document.getElementById('enteringScreen_class').style.display = 'flex';
+}
+function showNameSelectionScreen(){
+  document.getElementById('enteringScreen_name').style.display = 'flex';
+}
 
-function disableEnteringScreen(values){
+function disableEnteringScreen(){
   document.getElementById('enteringScreen').style.display = 'none';
-  loadAssets(() => {
-    startGame(values.name);
-  });
+    startGame();
 }
 function drawPings(){
   let scaleDown = 2;
@@ -446,6 +488,7 @@ function updatePlayers(socket){
       // console.log(otherPlayer);
       otherPlayer.draw();
     }
+    updateTabContent();
 
   }
 }
@@ -457,6 +500,7 @@ function getPlayerInfo(pl){
     weaponAngle: pl.weaponAngle,
     weaponDegrees: pl.weaponDegrees,
     hp: pl.hp,
+    dominating: pl.dominating,
     maxHp: pl.maxHp,
     isDead: pl.isDead,
     kills: pl.kills,
@@ -547,8 +591,11 @@ function getRandomColor() {
 
 document.addEventListener('visibilitychange', (e) => {
   pausedGame = !pausedGame;
-  console.log(pausedGame);
 })
+
+window.addEventListener('unload', ()=>{
+  if (GAME_STATE == 'game') createNotification(1, {playerName: player.name});
+});
 
 document.addEventListener('keydown', (e) => {
   const key = e.key ? e.key.toLowerCase() : 0;
@@ -558,11 +605,11 @@ document.addEventListener('keydown', (e) => {
       }
     } 
     if (key == 'e'){
-      // console.log('co nie')
       if (player.interacionWith) player.interact();
     }
     if (key == 'tab'){
       e.preventDefault();
+      toggleTab('on');
     }
     
     pressedKeys[key] = 1;
@@ -572,6 +619,10 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) =>{
     const key = e.key ? e.key.toLowerCase() : 0;
     
+      if (key == 'tab'){
+        toggleTab('off');
+      }
+
     delete pressedKeys[key];
 
 });
@@ -602,33 +653,107 @@ document.addEventListener('mousedown', (e) => {
   }
 
   if (e.target.id == 'respawnBtn'){
+    loadedAudio['click'].play();
     player.respawn();
   }
-  if (e.target.id == 'playBtn'){
-    let elems = document.getElementById('inputs').children;
-    let values = {};
 
-    const searchParams = new URLSearchParams(window.location.search);
-    Array.from(elems).forEach(elem => {
-      if (elem.tagName === 'INPUT'){
-        if (!elem.value && elem.name == 'name'){
-          let randomName = playerNames[Math.floor(Math.random() * playerNames.length)];
-          if (randomName) elem.value = randomName;
-          else elem.value = 'Unknown';
-        }
-        searchParams.set(elem.name, elem.value);
-        const updatedSearchString = searchParams.toString();
-        
-        // Create a new URL with the updated search string
-        const newUrl = `${window.location.origin}${window.location.pathname}?${updatedSearchString}`;
-        
-        // Update the browser history without reloading the page
-        window.history.pushState({ path: newUrl }, '', newUrl);
-        
-        values[elem.name] = elem.value;
+  if (e.target.className == 'btn'){
+    loadedAudio['click'].play();
+  }
+
+  if (e.target.className == 'classSelectionBtn'){
+    loadedAudio['click'].play();
+
+    let btns = document.querySelectorAll('.classSelectionBtn');
+
+
+    if (e.target.dataset.selected === undefined){
+      // remove selected state from all
+      for (i = 0; i < btns.length; i++){
+        btns[i].removeAttribute('data-selected')
       }
-    })
-    disableEnteringScreen(values);
+
+      // add selected state to clicked one
+      e.target.dataset.selected = 'true';
+      choosenValues['class'] = e.target.dataset.name;
+      
+      document.getElementById('classSpaceMaker').style.display = 'none';
+      document.getElementById('classInfoBox').style.display = 'flex';
+
+      let infoDiv = document.getElementById('classBoxChamp');
+
+      let loadOutDiv = document.getElementById('classBoxWeapon');
+
+      let classData = classesInfo[e.target.dataset.name];
+
+      let content = `
+      <div class='colorYellow' style='text-transform: uppercase; font-size: 30px;'>${e.target.dataset.name}</div>
+      <div>HP: ${classData.hp}</div>
+      <div>${classData.desc}</div>
+      `;
+
+      let weapon = WEAPONS[classData.weaponId]; 
+
+      let stats = {
+        dmg: weapon.dmg !== undefined ? weapon.dmg : DEFAULT_WEAPON_DMG,
+        heal: weapon.heal !== undefined ? weapon.heal : DEFAULT_WEAPON_HEAL,
+        cooldown: weapon.cooldown ? weapon.cooldown : DEFAULT_WEAPON_COOLDOWN,
+        drag: weapon.drag !== undefined ? weapon.drag : DEFAULT_WEAPON_DRAG,
+        knockback: weapon.knockback !== undefined ? weapon.knockback : DEFAULT_WEAPON_KNOCKBACK,
+      }
+
+      let dmgType = stats.dmg > 0 && stats.heal == 0 ? `<div class='colorRed'>DMG: ${stats.dmg}</div>` : `<div class='colorGreen'>HEAL: ${stats.heal}</div>`; 
+
+      let loadOutContent = `
+      <div style='width: 80px;'><img src='imgs/${weapon.imageName}.png' width='100%' height='100%' draggable='false' /></div>
+      <div id='gunStats'>      
+        ${dmgType}
+        <div>SPEED: ${stats.cooldown / 1000} / sec</div>
+        <div>DRAG: ${stats.drag}</div>
+        <div>KNOCKBACK: ${stats.knockback}</div>
+      </div>
+      `;
+
+      loadOutDiv.innerHTML = loadOutContent;
+      infoDiv.innerHTML = content;
+
+    }else{
+      e.target.removeAttribute('data-selected');
+      document.getElementById('classSpaceMaker').style.display = 'block';
+      document.getElementById('classInfoBox').style.display = 'none';
+      delete choosenValues['class'];
+    }
+
+  }
+
+  if (e.target.id == 'nextBtn'){
+    let step = e.target.dataset.id;
+    console.log(step);
+    if (step === '0'){ // name selection
+      let name = document.getElementById('playerNameInput').value;
+      if (!name) name = playerNames[Math.floor(Math.random() * playerNames.length)];
+      
+      const searchParams = new URLSearchParams(window.location.search);
+
+      searchParams.set('name', name);
+      
+      const updatedSearchString = searchParams.toString();
+        
+      // Create a new URL with the updated search string
+      const newUrl = `${window.location.origin}${window.location.pathname}?${updatedSearchString}`;
+        
+      // Update the browser history without reloading the page
+      window.history.pushState({ path: newUrl }, '', newUrl);
+
+      choosenValues['name'] = name;     
+
+      showClassSelectionScreen();
+    }
+  }
+
+
+  if (e.target.id == 'playBtn'){
+    disableEnteringScreen();
   }
 });
 document.addEventListener('mouseup', (e) => {
@@ -808,6 +933,76 @@ function getPlayerById(id){
     if (players[i].id == id) return {v: players[i].values, i: i};
   }  
 }
-function bigMessage(player){
+function bigMessage(type, playerName, broadcast = true){
   let messageDiv = document.getElementById('bigMessage');
+  messageDiv.style.transition = '0s';
+  messageDiv.style.opacity = 1;
+  if (type === 0){ // player is dominating
+    messageDiv.innerHTML = `<span class='colorYellow'>${playerName} is dominating!</span>`
+    if (player.name !== playerName){
+      loadedAudio['5_kills'].volume(0.05);
+      loadedAudio['5_kills'].play();
+    }
+  }
+
+  setTimeout(()=>{
+    messageDiv.style.transition = '2s';
+    messageDiv.style.opacity = 0;
+  }, 3000);
+
+  if (broadcast) sendBigMessage(type, playerName);
+
+}
+let tabUpdateCooldown = 500;
+let tabLastUpdateTime = 0;
+let noTabUpdate = false;
+
+function updateTabContent(){
+  if (noTabUpdate) return;
+  let tabMainDiv = document.getElementById('tabScreen');
+  if (tabMainDiv.style.display !== 'flex') return;
+  if (Date.now() - tabLastUpdateTime < tabUpdateCooldown) return; 
+  tabLastUpdateTime = Date.now();
+
+  players.sort((p1, p2) => p1.kills - p2.kills);
+
+  let blueTeamDiv = document.getElementById('blueTeam');
+  let redTeamDiv = document.getElementById('redTeam');
+
+  let redContent = '';
+  let blueContent = '';
+
+  for (let i = players.length-1; i >= 0; i--){
+    let p = players[i].values;
+    if (!p) continue;
+    let team = p.team ? p.team : 'blue';
+    let playerClass = p.class ? p.class : 'dmg';
+
+    // classes: dmg, tank, heal
+
+    let classImage = `<img src='imgs/${playerClass}_class.png' height='100%'/>`;
+
+    let youTag = p.name == player.name ? 'colorYellow' : '';
+
+    let element = `<div class='tab_player'>
+      <div class='tab_player_color'><div class='coloredBox' style='background-color: ${p.color};'></div></div>
+      <div class='tab_player_name tabCell ${youTag}'>${p.name}</div>                                    
+      <div class='tab_player_kills tabCell'>Kills: ${p.kills}</div>
+      <div class='tab_player_deaths tabCell'>Deaths: ${p.deaths}</div>
+      <div class='tab_player_dominating tabCell'>Domination: ${p.dominating}</div>
+      <div class='tab_player_class tabCell'>Class: ${classImage}</div>
+      </div>`
+
+    if (team == 'blue') blueContent += element;
+    else redContent += element;
+  }
+
+  blueTeamDiv.innerHTML = blueContent;
+  redTeamDiv.innerHTML = redContent;
+
+}
+function toggleTab(state){
+  let tabDiv = document.getElementById('tabScreen');
+  let display = state == 'on' ? 'flex' : 'none';
+  tabDiv.style.display = display;
 }
