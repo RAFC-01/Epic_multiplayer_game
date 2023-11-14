@@ -39,7 +39,7 @@ io.on('connection', client => {
   });
 
   client.on('dealDmg', (data) => {
-    io.to(data.playerID).emit('reciveDmg', data.dmg);
+    io.to(data.playerID).emit('reciveDmg', data);
   })
 
   client.on('knockback', (data) => {
@@ -49,6 +49,10 @@ io.on('connection', client => {
   client.on('shootSpecial', (data) => {
     client.broadcast.emit('shootSpecialRecive', data);
   })
+
+  client.on('notify', (data) => {
+    client.broadcast.emit('reciveNotify', data);
+  });
 
   client.on('spectatePlayer', (data) => {
     if (data.all){
@@ -101,5 +105,6 @@ function editPlayerWithId(id, values){
   // console.log(playerList);
 
 }
+
 
 createServer();

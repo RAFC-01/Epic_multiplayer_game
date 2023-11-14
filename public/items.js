@@ -56,7 +56,7 @@ class Spike extends Structure{
         this.colisionDmg = 1000;
     }
     collision(){
-        player.dealDmg(this.colisionDmg);
+        player.dealDmg(this.colisionDmg, {object: 'spike'});
     }
 }
 

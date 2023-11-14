@@ -13,7 +13,8 @@ const DEFAULT_WEAPON_KNOCKBACK = 3;
 const WEAPONS = {
     1: {
         name: 'ak47',
-        imageName: 'gun'
+        imageName: 'gun',
+        soundName: 'gun_shot'
     },
     21: {
         name: 'portal gun',
@@ -30,7 +31,8 @@ const WEAPONS = {
         knockback: 1,
         drag: 1,
         dmg: 2,
-        cooldown: 300
+        cooldown: 300,
+        soundName: 'gun_shot'
     }
 }
 
@@ -40,6 +42,7 @@ function createWeaponImgs(){
         let id = weaponsIDs[i];
         WEAPONS[id].img = loadedImgs[WEAPONS[id].imageName];
         WEAPONS[id].scale = WEAPONS[id].scale ? WEAPONS[id].scale : DEFAULT_SIZE_SCALE; 
+        if (WEAPONS[id].soundName) WEAPONS[id].sound = loadedAudio[WEAPONS[id].soundName];
     }
 }
 
@@ -63,6 +66,7 @@ class Particle{
         this.shooterId = shooterId;
         this.trail = [];
         this.trailLength = 5;
+        if (this.weapon.sound) this.weapon.sound.play();
         PARTICLES.push(this);
     }
     draw(){
@@ -136,10 +140,13 @@ class Particle{
             // hit target, destroy bullet
             if (collision.target){
                 // console.log('hit player', collision.target);
-                if (collision.target !== player.socketId){
+                if (collision.target !== player.socketId && this.shooterId == player.socketId){
                     // deal dmg to attacked player
                     // console.log(this.dmg);
-                    if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target);
+                    let victim = players[getPlayerById(collision.target).i].values;
+                    loadedAudio['gun_hit'].play();
+                    victim.hp-= this.dmg;
+                    if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target, {attacker: player.name, weapon: 'gun'});
                     // knockback attacked player
                     let knockbackValue = {
                         x: this.dir.x * this.knockback,
@@ -239,7 +246,8 @@ class SpecialParticle{
                 if (collision.target !== this.shooterId){
                     // deal dmg to attacked player
                     // console.log(this.dmg);
-                    if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target);
+                    let shooterName = getNameById(this.shooterId);
+                    if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target, {attacker: shooterName, weapon: 'cannon'});
                     // knockback attacked player
                     let knockbackValue = {
                         x: this.dir.x * this.knockback,

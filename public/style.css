@@ -105,3 +105,56 @@ body{
     top: 25px;
     font-size: 30px;
 }
+#notifications{
+    position: fixed;
+    z-index: 3;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    user-select: none;
+}
+.notification{
+    background-color: #000000c4;
+    padding: 5px 30px 5px 30px;
+    text-align: center;
+    max-height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+.notification[data-special='true']{
+    outline: 2px solid gold;
+}
+.gunIcon{
+    margin-top: -5px;
+}
+.cannonIcon{
+    margin-top: 0px;
+}
+.colorYellow{
+    color: #ebeb4c;
+}
+.colorRed{
+    color: rgb(179, 23, 23);
+}
+.colorGreen{
+    color: green;
+}
+.fontBold{
+    font-weight: bold;
+}
+#bigMessageBox{
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 50vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 4vw;
+}

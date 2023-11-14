@@ -6,6 +6,8 @@ class CharacterEntity{
         this.maxHp = 10;
         this.lastShoot = 0;
         this.groundedCooldown = 50;
+        this.kills = 0;
+        this.deaths = 0;
     }
     drawWeapon() {
         // ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -79,13 +81,13 @@ class CharacterEntity{
         ctx.fill();
         ctx.closePath();
     }
-    dealDmg(amm){
+    dealDmg(amm, data){
         if (this.godMode) return;
         this.hp -= amm;
         if (this.hp < 0) this.hp = 0;
         if (this.hp > this.maxHp) this.hp = this.maxHp;
         
-        if (this.hp == 0) this.kill();
+        if (this.hp == 0) this.kill(data);
     }
     draw(){
         if (this.isDead) return;
@@ -118,12 +120,25 @@ class CharacterEntity{
             ctx.closePath();
         } 
     }
-    kill(){
+    kill(data){
+        if (this.isDead) return;
         this.hp = 0;
         this.isDead = true;
         this.vel.x = 0;
         this.vel.y = 0;
         document.getElementById('deathScreen').style.display = 'flex';        
+        this.deaths++;
+        this.killStreak = 0;
+        // console.log(attacker);
+        if (data){
+            // send notification
+            if (data.attacker){
+                createNotification(2, {attacker: data.attacker, victim: this.name, weapon: data.weapon});                
+            }
+            if (data.object && data.object == 'spike'){
+                createNotification(3, {playerName: this.name});
+            }
+        }
     }
     respawn(){
         this.hp = this.maxHp;

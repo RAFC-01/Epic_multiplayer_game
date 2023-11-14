@@ -43,11 +43,14 @@ let pingNofity;
 let knockbackPlayer;
 let shootSpecial;
 let makeSpectate;
+let sendNotification;
 let pingLifeSpan = 1;
 
 let pingTypes = {
   0: 'missing'
 }
+
+let pausedGame = false;
 
 let GAME_STATE = 'lobby';
 
@@ -69,7 +72,7 @@ function initializePingAudio(){
 function loadAssets(next){
   document.getElementById('loadingScreen').style.display = 'flex';
   const assetsToLoad = ['box', 'interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
-  const soundsToLoad = ['missing'];
+  const soundsToLoad = ['5_kills','4_kills','3_kills','2_kills','1_kills','missing', 'gun_shot', 'gun_hit'];
 
   let loadedStatus = {
     img: false,
@@ -121,6 +124,12 @@ function startGame(name){
   createWeaponImgs();
   player = new Player(spawnPoint.x, spawnPoint.y, name);
   CAMERA = new Camera();
+
+  // createNotification(1, {playerName: name});
+  // createNotification(2, {attacker: 'name', victim: name, weapon: 'gun'});
+  // createNotification(2, {attacker: 'name', victim: 'name2', weapon: 'cannon'});
+  // createNotification(3, {playerName: name});
+
   try{
     document.getElementById('loadingScreen').style.display = 'none';
     let socket = io({
@@ -218,12 +227,12 @@ function startGame(name){
     }
 
     socket.on('reciveDmg', (data) => {
-      player.dealDmg(data);
+      player.dealDmg(data.dmg, data.attackerName);
     })
-    dealDmgToPlayer = (dmg, playerID) => {
+    dealDmgToPlayer = (dmg, playerID, attackerName) => {
       // console.log('deal dmg')
       let data = {
-        dmg, playerID
+        dmg, playerID, attackerName
       }
       socket.emit('dealDmg', data);
     }
@@ -263,8 +272,18 @@ function startGame(name){
       let data = {reset, playerID, targetPlayer, all};
       socket.emit('spectatePlayer', data);
     }
+
+    socket.on('reciveNotify', (data) => {
+      createNotification(data.type, data.data, false);
+    })
+
+    sendNotification = (type, data) => {
+      socket.emit('notify', {type, data})
+    }
     GAME_STATE = 'game';
 
+    createNotification(0, {playerName: name});
+  
   }catch (err){
     console.log(err);
   }
@@ -354,6 +373,7 @@ function startEditor(){
 
 function createParticle(data){
   // console.log(data);
+  if (!data) return;
   new Particle(data.x, data.y, data.dir, data.speed, data.id, data.weaponId);
 }
 
@@ -439,6 +459,8 @@ function getPlayerInfo(pl){
     hp: pl.hp,
     maxHp: pl.maxHp,
     isDead: pl.isDead,
+    kills: pl.kills,
+    deaths: pl.deaths,
     pos: {
       x: pl.x,
       y: pl.y,
@@ -522,6 +544,11 @@ function getRandomColor() {
     "Saki Honda",
     "Yusuke Takahashi"
   ];
+
+document.addEventListener('visibilitychange', (e) => {
+  pausedGame = !pausedGame;
+  console.log(pausedGame);
+})
 
 document.addEventListener('keydown', (e) => {
   const key = e.key ? e.key.toLowerCase() : 0;
@@ -695,5 +722,92 @@ function getPlayerPos(playerID){
       size: players[i].values.size
     }
   }
-  return {x: 0, y: 0}
+  return player;
+}
+
+function createNotification(type, data, broadcast = true){
+  const notiDiv = document.getElementById('notifications');
+  let message = '';
+  let isSpecial = false;
+  let youText = data.playerName && data.playerName == player.name ? '(You)' : '';
+  if (type == 0){ // player joined
+    message = `<span class='colorYellow'>${data.playerName} ${youText} joined</span>`;
+  }
+  if (type == 1){ // player left
+    message = `<span class='colorRed'>${data.playerName} ${youText} left</span>`;
+  }
+  if (type == 2){ // killed player
+    // data.attacker
+    // data.victim
+    // data.weapon
+    if (data.weapon == 'cannon') isSpecial = true;
+    let youAttacker = data.attacker && data.attacker == player.name ? '(You)' : '';
+    let youVictim = data.victim && data.victim == player.name ? '(You)' : '';
+
+    let weapon = data.weapon == 'gun' ? 'gun.png' : 'cannon.png';
+    let weaponSize = data.weapon == 'gun' ? {x: 384/5, y: 216/5} : {x: 300/9, y: 212/9};
+    let iconClass = data.weapon == 'gun' ? 'gunIcon' : 'cannonIcon';
+    let weaponIcon = `<img class='${iconClass}' src='imgs/${weapon}' width='${weaponSize.x}' height='${weaponSize.y}' />`;
+
+    message = `
+    <span class='colorGreen'>${data.attacker} ${youAttacker}</span>
+    ${weaponIcon}
+    <span class='colorRed'>${data.victim} ${youVictim} </span>
+    `
+    if (data.attacker === player.name) {
+      player.confirmKill();
+    }
+  } 
+  if (type == 3){ // died to spikes
+    // data.playerName
+    let youText = data.playerName && data.playerName == player.name ? '(You)' : '';
+
+    let spikeImage = `<img src='imgs/spike.png' width='25' height='25' />`
+    message = `<span class='colorRed'>${data.playerName} ${youText} just died! </span> ${spikeImage}`;
+  }
+
+  let notificationDiv = document.createElement('div');
+  notificationDiv.innerHTML = message;
+  notificationDiv.className ='notification';
+  notificationDiv.dataset.special = isSpecial;
+  notificationDiv.style.transition = '2s'; 
+
+  notiDiv.appendChild(notificationDiv);
+
+  setTimeout(()=>{
+    notificationDiv.style.opacity = '0';
+  }, 3000);
+
+  notificationDiv.addEventListener('transitionend', function () {
+    // This callback is called when the transition is complete
+    notificationDiv.remove();
+  });
+
+
+  if (notiDiv.children.length > 5) {
+    notiDiv.removeChild(notiDiv.firstElementChild);
+  }
+
+  // check for missed notifications
+  for (let i = 0; i < notiDiv.children.length; i++){
+    let noti = notiDiv.children[i];
+    if (noti.style.opacity === '0') noti.remove();
+  }
+
+
+  if (broadcast) sendNotification(type, data);
+
+}
+function getNameById(id){
+  for (let i = 0; i< players.length; i++){
+    if (players[i].id == id) return players[i].values.name;
+  }
+}
+function getPlayerById(id){
+  for (let i = 0; i< players.length; i++){
+    if (players[i].id == id) return {v: players[i].values, i: i};
+  }  
+}
+function bigMessage(player){
+  let messageDiv = document.getElementById('bigMessage');
 }

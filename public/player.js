@@ -21,7 +21,8 @@ class Player extends CharacterEntity{
         this.fallSideAcceleration = 10;
         this.directionChangeMult = 1.6;
         this.jumpSpeed = -5;
-        this.godMode = true;
+        this.killStreak = 0;
+        this.godMode = false;
 
         this.changeWeapon(this.weaponId);
 
@@ -211,6 +212,23 @@ class Player extends CharacterEntity{
     interact(){
         if (this.interacionWith) this.interacionWith.interact();
     }
+    confirmKill(){
+        if (this.killStreak > 4){
+            this.killStreak = 0;
+        } 
+        this.playKillSound();
+        this.kills++;
+        this.killStreak++;
+    }
+    playKillSound(){
+        // stop all kill audio
+        loadedAudio['gun_hit'].stop();
+        for (let i = 1; i <= 5; i++){
+            loadedAudio[i+'_kills'].stop();
+        }
+        loadedAudio[(this.killStreak+1)+'_kills'].play();
+    }
+
 }
 function getSolidRect(solid){
     return {
