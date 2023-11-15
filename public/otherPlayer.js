@@ -8,7 +8,7 @@ class OtherPlayer extends CharacterEntity{
         this.weaponLoaded = false;
         this.color = data.color;
         this.hp = data.hp;
-        this.maxhp = data.maxhp;
+        this.maxHp = data.maxHp;
         this.isDead = data.isDead;
         this.weaponId = data.weaponId;
         this.weapon = WEAPONS[this.weaponId];

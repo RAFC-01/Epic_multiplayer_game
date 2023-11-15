@@ -18,6 +18,22 @@
     <title>Document</title>
 </head>
 <body>
+    <div id="editotModeText">>> Editor mode <<
+        <div id='editorBtns'>
+            <div id="tileImages">
+                
+            </div>
+            <div id="triggerBoxes">
+                <div class="clickableBox" id="collisionBox"></div>
+                <div class="clickableBox" id="triggerBox"></div>
+                <div class="clickableBox" id="killerBox"></div>
+            </div>
+            <div class='btn' id='saveMap_btn'>Save Map</div></div>
+        </div>
+    <div id="escapeScreen" class="blackScreen">
+        <p>MENU</p>
+        <div id="goBackBtn" class="btn">Go back to selection</div>
+    </div>
     <div id="tabScreen">
         <div id="tabTable">
             <div id="tab_playerInfo">
@@ -74,8 +90,13 @@
                 <div id="classBoxChamp"></div>
                 <div id="classBoxWeapon"></div>
             </div>
-            <div class="btn" id="playBtn" data-id="1">Next</div>    
+            <div class="btn" id="nextBtn" data-id="1">Next</div>    
             <div id="classSpaceMaker"></div>
+        </div>
+        <div id="enteringScreen_color" class="enteringScreenSection">
+            <p style="text-transform: uppercase; font-size: 30px; margin-bottom: 0px;">Select your color!</p>
+            <div id="enteringScreen_colors"></div>
+            <div class="btn" id="playBtn" data-id="1">Play</div>    
         </div>
     </div>
     <canvas></canvas>

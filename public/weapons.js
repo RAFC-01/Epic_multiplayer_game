@@ -9,22 +9,16 @@ const DEFAULT_WEAPON_HEAL = 0;
 const DEFAULT_WEAPON_COOLDOWN = 400; // ms
 const DEFAULT_WEAPON_TRAIL_STATE = true;
 const DEFAULT_WEAPON_DRAG = 2;
+const DEFAULT_BULLET_AMMOUNT = 1;
+const DEFAULT_BULLET_SPEED = 10;
 const DEFAULT_WEAPON_KNOCKBACK = 3;
 
 const WEAPONS = {
     1: {
         name: 'ak47',
         imageName: 'gun',
-        soundName: 'gun_shot'
-    },
-    21: {
-        name: 'portal gun',
-        imageName: 'portal_gun',
-        bulletSize: 10,
-        dmg: 0,
-        hasTrail: false,
-        knockback: 0,
-        drag: 0
+        soundName: 'gun_shot',
+        cooldown: 350,
     },
     3: {
         name: 'ak47-asimov',
@@ -38,10 +32,33 @@ const WEAPONS = {
     4: {
         name: 'heal-gun',
         imageName: 'heal_gun',
-        heal: 5,
-        dmg: 0,
-        cooldown: 300,
+        soundName: 'heal_gun',
+        hitSound: 'healed',
+        heal: 0.5,
+        dmg: -0.5,
+        drag: 1,
+        cooldown: 333,
         knockback: 0,
+        bulletSpeed: 0.5,
+        bulletSize: 5,
+        color:  {r: 10, g: 255, b: 10},
+        maxDistance: 250,
+        hasTrail: false
+    },
+    5: {
+        name: 'shot-gun',
+        imageName: 'shot_gun',
+        dmg: 2,
+        leastDmg: 1,
+        knockback: 4,
+        drag: 3,
+        cooldown: 1500,
+        soundName: 'shot_gun',
+        color:  {r: 255, g: 255, b: 0},
+        bulletAmmout: 5,
+        maxDistance: 400,
+        hasTrail: false,
+        bulletSize: 2,
     }
 }
 
@@ -58,7 +75,7 @@ function createWeaponImgs(){
 const PARTICLES = [];
 
 class Particle{
-    constructor(x, y, dir, speed, shooterId, weaponID){
+    constructor(x, y, dir, speed, shooterId, weaponID, noSound){
         this.weapon = WEAPONS[weaponID];
         this.weaponScale = this.weapon.scale ? this.weapon.scale : DEFAULT_SIZE_SCALE; 
         this.x = x + dir.x * this.weapon.size.x / 2;
@@ -73,9 +90,11 @@ class Particle{
         this.createdTime = Date.now();
         this.knockback = this.weapon.knockback !== undefined ? this.weapon.knockback : DEFAULT_WEAPON_KNOCKBACK;
         this.shooterId = shooterId;
+        this.maxDistance = this.weapon.maxDistance ? this.weapon.maxDistance : 0;
         this.trail = [];
         this.trailLength = 5;
-        if (this.weapon.sound){
+        this.createdAt = {x: x + dir.x * this.weapon.size.x / 2, y: y + dir.y * this.weapon.size.x / 2};
+        if (this.weapon.sound && !noSound){
             loadedAudio['gun_shot'].stop();
             this.weapon.sound.play();
         } 
@@ -92,7 +111,8 @@ class Particle{
             let trailSize = this.size-1 > 0 ? this.size-1 : this.size;
             for (let i = 0; i < this.trail.length; i++){
                 let t = this.trail[i];
-                let alpha = i / this.trail.length;
+                let orginA = this.color.a ? this.color.a : 1;
+                let alpha = orginA - i / this.trail.length;
                 ctx.beginPath();
                 ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
                 ctx.arc(t.x - CAMERA.offset.x, t.y - CAMERA.offset.y, trailSize, 0, 360, false);
@@ -102,7 +122,8 @@ class Particle{
         }
         // particle
         ctx.beginPath();
-        ctx.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+        let alpha = this.color.a ? this.color.a : 1;
+        ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
         ctx.arc(pos.x, pos.y, this.size, 0, 360, false);
         ctx.fill();
         ctx.closePath();
@@ -113,6 +134,17 @@ class Particle{
         let speed = {
             x: this.dir.x * this.speed,
             y: this.dir.y * this.speed
+        }
+
+        if (this.maxDistance) {
+            let distFromCreted = Math.pow(this.createdAt.x - this.x, 2) + Math.pow(this.createdAt.y - this.y, 2);
+            let dist = Math.sqrt(distFromCreted);
+            if (this.maxDistance < dist){
+                PARTICLES.splice(PARTICLES.indexOf(this), 1);
+                return;
+            } 
+            let alpha = 1 - dist / this.maxDistance;
+            this.color.a = alpha;
         }
 
         this.vel.x = speed.x * dt * DELTA_SPEED_CORRECTION;
@@ -149,6 +181,9 @@ class Particle{
         if (!collision){
             this.x += this.vel.x;
             this.y += this.vel.y;
+
+            if (this.x < 0 || this.y < 0) PARTICLES.splice(PARTICLES.indexOf(this), 1);
+            if (this.x > MAP_SIZE.x || this.y > MAP_SIZE.y) PARTICLES.splice(PARTICLES.indexOf(this), 1);
         }else{
             // hit target, destroy bullet
             if (collision.target){
@@ -157,7 +192,9 @@ class Particle{
                     // deal dmg to attacked player
                     // console.log(this.dmg);
                     let victim = players[getPlayerById(collision.target).i].values;
-                    loadedAudio['gun_hit'].play();
+
+                    if (this.weapon.hitSound) loadedAudio[this.weapon.hitSound].play();
+                    else loadedAudio['gun_hit'].play();
                     victim.hp-= this.dmg;
                     if (dealDmgToPlayer) dealDmgToPlayer(this.dmg, collision.target, {attacker: player.name, weapon: 'gun'});
                     // knockback attacked player
@@ -166,8 +203,6 @@ class Particle{
                         y: this.dir.y * this.knockback
                     }
                     knockbackPlayer(knockbackValue.x, knockbackValue.y, collision.target);                   
-
-                    player.dealDmg(-this.dmg); // heal hp
                 }
             }else{
                 // console.log('just a block');

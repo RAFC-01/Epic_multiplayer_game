@@ -4,6 +4,10 @@ class Player extends CharacterEntity{
         this.name = values.name ? values.name : 'Unknown';
         this.class = values.class ? values.class : 'dmg';
         this.display = 'You';
+        
+        this.hp = classesInfo[this.class].hp;
+        this.maxHp = classesInfo[this.class].hp;
+
         this.x = x;
         this.y = y;
         this.vel = {x: 0, y: 0};
@@ -12,16 +16,17 @@ class Player extends CharacterEntity{
             x: 50,
             y: 100
         }
-        this.color = getRandomColor();
+        this.color = values.color ? values.color : getRandomColor();
+        this.weaponId = classesInfo[this.class].weaponId;
         this.remainder = {x: 0, y: 0};
         this.runAcceleration = 10;
-        this.runSpeed = 4;
+        this.runSpeed = this.class == 'heal' ? 6 : 4;
         this.runReduce = 22; 
         this.flyReduce = 12;    
         this.fallSpeed = 5.6;
         this.fallSideAcceleration = 10;
         this.directionChangeMult = 1.6;
-        this.jumpSpeed = -5;
+        this.jumpSpeed = this.class == 'heal' ? -7 : -5;
         this.killStreak = 0;
         this.godMode = false;
 
@@ -56,6 +61,8 @@ class Player extends CharacterEntity{
         this.weaponDegrees =  this.weaponAngle * (180 / Math.PI);
 
         if (this.shooting) this.shoot();
+
+        if (this.class == 'heal') this.constantHeal();
 
         // physics 
                 
@@ -131,10 +138,18 @@ class Player extends CharacterEntity{
 
                 
                 // Test collision against Solids
-                for(let solidIdx = 0; solidIdx < blocks.length; solidIdx++)
+                for(let solidIdx = 0; solidIdx < COLLISIONBOXES.length; solidIdx++)
                 {
-                    let solid = blocks[solidIdx];
-                    let solidRect = getSolidRect(solid);
+                    let solid = COLLISIONBOXES[solidIdx];
+                    let solidData = {
+                        x: solid.x,
+                        y: solid.y,
+                        size: {
+                            x: solid.width,
+                            y: solid.height
+                        }
+                    }
+                    let solidRect = getSolidRect(solidData);
                     if(rectCollision(solidRect, playerRect)){
                         collisionHappenedX = true;
                         break;
@@ -176,10 +191,18 @@ class Player extends CharacterEntity{
                     playerRect.pos.y += moveSign;
       
                     // Test collision against Solids
-                    for(let solidIdx = 0; solidIdx < blocks.length; solidIdx++)
+                    for(let solidIdx = 0; solidIdx < COLLISIONBOXES.length; solidIdx++)
                     {
-                        let solid = blocks[solidIdx];
-                        let solidRect = getSolidRect(solid);  
+                        let solid = COLLISIONBOXES[solidIdx];
+                        let solidData = {
+                            x: solid.x,
+                            y: solid.y,
+                            size: {
+                                x: solid.width,
+                                y: solid.height
+                            }
+                        }
+                        let solidRect = getSolidRect(solidData);  
                         if(rectCollision(playerRect, solidRect)) {
                         // Moving down/falling
                             if(this.vel.y > 0)

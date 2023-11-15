@@ -100,8 +100,8 @@ class Cannon extends Structure{
                 y: this.y+20,
             }
         }
-        new SpecialParticle(bulletPos.x, bulletPos.y, 20, dir, 'red', 25, player.socketId);
-        shootSpecial(bulletPos.x, bulletPos.y, 20, dir, 'red', 25, player.socketId);
+        new SpecialParticle(bulletPos.x, bulletPos.y, 20, dir, 'red', 28, player.socketId);
+        shootSpecial(bulletPos.x, bulletPos.y, 20, dir, 'red', 28, player.socketId);
         
         this.lastTimeShoot = Date.now();
     }

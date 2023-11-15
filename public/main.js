@@ -17,11 +17,12 @@ const friction = 0.8;
 const STRUCTURES = [];
 const SPECIAL_PARTICLES = [];
 const TILES = [];
+const COLLISIONBOXES = [];
 
 const classesInfo = {
   'tank':{
-    hp: 50,
-    weaponId: 1,
+    hp: 25,
+    weaponId: 5,
     knockbackRes: 5,
     desc: 'Unit has a close range weapon, (shield) and (knockback resistance)'
   },
@@ -32,7 +33,7 @@ const classesInfo = {
     desc: 'Unit has a long/close range weapon and (low hp), but (heals to full hp on kill)'
   },
   'heal': {
-    hp: 20,
+    hp: 8,
     weaponId: 4,
     knockbackRes: -2,
     desc: 'Unit has a heal gun that allows you to heal (allies) as well as (enemies)'
@@ -40,6 +41,11 @@ const classesInfo = {
 }
 
 let timeMultiplier = 1;
+let isTpEnabled = false;
+let editorMode = true;
+let selectedTile = 'box';
+let triggerBoxSelected = null;
+let triggerBoxData = {};
 
 const DELTA_SPEED_CORRECTION = 140;
 
@@ -94,8 +100,8 @@ function initializePingAudio(){
 
 function loadAssets(next){
   document.getElementById('loadingScreen').style.display = 'flex';
-  const assetsToLoad = ['heal_gun', 'dmg_class','tank_class','dmg_class','box', 'interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
-  const soundsToLoad = ['death_sound','click','5_kills','4_kills','3_kills','2_kills','1_kills','missing', 'gun_shot', 'gun_hit'];
+  const assetsToLoad = ['greenBox','redBox','blueBox','pillar-middle','bricks','shot_gun','heal_gun', 'dmg_class','tank_class','dmg_class','box', 'interactionKey', 'blue_portal_flat','arrow', 'missing', 'cannon', 'portal_gun', 'spike', 'gun', 'ak_asimov'];
+  const soundsToLoad = ['healed','heal_gun','shot_gun','death_sound','click','5_kills','4_kills','3_kills','2_kills','1_kills','missing', 'gun_shot', 'gun_hit'];
 
   let loadedStatus = {
     img: false,
@@ -173,6 +179,7 @@ function startGame(){
       player.update();
       CAMERA.update();
       
+      
       drawBackGround();
       drawBlocks();
       drawTiles();
@@ -183,6 +190,10 @@ function startGame(){
       player.draw();
       drawPings();
       
+      if (editorMode){
+        drawCollisionBoxes();
+      }
+
       socket.emit('update', getPlayerInfo(player));
       
       stats.end();
@@ -238,7 +249,7 @@ function startGame(){
     socket.on('shootB', (data) => {
       createParticle(data);
     });
-    shootBullet = (x, y, dir, speed, weaponId) => {
+    shootBullet = (x, y, dir, speed, weaponId, noSound = false) => {
       let data = {
         x: x,
         y: y,
@@ -246,6 +257,7 @@ function startGame(){
         speed: speed,
         weaponId: weaponId,
         id: socket.id,
+        noSound: noSound
       }
       socket.emit('shootBullet', data);
     }
@@ -339,33 +351,6 @@ function drawTiles(){
   }
 }
 function drawMap(){
-  // walls
-  // new Block(0, floor_level, 1980, canvas.height/2, 'green');
-  // new Block(0, floor_level - 1000, 10, 1000, invisibleColor);
-  // new Block(1980, floor_level - 1000, 10, 1000, invisibleColor);
-  // new Block(0, 0, 1980, 10, invisibleColor);
-  
-  // // other
-  // new Block(250, floor_level-50, 50, 50, 'red');
-  // // new Block(550, floor_level-150, 50, 150, 'red');
-  // new Block(950, floor_level-50, 50, 50, 'red');
-  // new Block(60, floor_level-450, 320, 50, 'red');
-  
-  // new Spike(300, floor_level-50, {x: 50, y:50});
-  // new Spike(350, floor_level-50, {x: 50, y:50});
-  // new Spike(400, floor_level-50, {x: 50, y:50});
-  // new Spike(450, floor_level-50, {x: 50, y:50});
-  // new Spike(500, floor_level-50, {x: 50, y:50});
-  // new Spike(550, floor_level-50, {x: 50, y:50});
-  // new Spike(600, floor_level-50, {x: 50, y:50});
-  // new Spike(650, floor_level-50, {x: 50, y:50});
-  // new Spike(700, floor_level-50, {x: 50, y:50});
-  // new Spike(750, floor_level-50, {x: 50, y:50});
-  // new Spike(800, floor_level-50, {x: 50, y:50});
-  // new Spike(850, floor_level-50, {x: 50, y:50});
-  // new Spike(900, floor_level-50, {x: 50, y:50});
-
-  // new Cannon(0, floor_level-212, {x: 300, y:212});
   let defaultSize = {x: 50, y: 50};
   let defaultColor = 'red';
   for (let i = 0; i < MAP.length; i++){
@@ -395,6 +380,11 @@ function drawMap(){
     if (data.type == 'cannon'){
       new Cannon(data.x, data.y, size, data.o);
     }
+    if (data.type == 'triggerBox'){
+      if (data.name == 'collisionBox'){
+        COLLISIONBOXES.push(data);
+      }
+    }
   }
 
 }
@@ -406,7 +396,7 @@ function startEditor(){
 function createParticle(data){
   // console.log(data);
   if (!data) return;
-  new Particle(data.x, data.y, data.dir, data.speed, data.id, data.weaponId);
+  new Particle(data.x, data.y, data.dir, data.speed, data.id, data.weaponId, data.noSound);
 }
 
 function createPing(data){
@@ -415,25 +405,89 @@ function createPing(data){
     pingsAudio[data.id].play();
 }
 
+function loadEditor(){
+  let btns = document.getElementById('tileImages');
+  let blockImages = ['box', 'spike', 'bricks', 'pillar-middle', 'blueBox', 'redBox', 'greenBox'];
+
+  let content = '';
+  for (let i = 0; i < blockImages.length; i++ ){
+    content += `<div class='tileBtn' data-name='${blockImages[i]}'>
+    <img src='imgs/${blockImages[i]}.png' width='100%' height='100%' draggable='false'/>
+    </div>`
+  }
+
+  btns.innerHTML = content;
+}
+
 window.onload = () => {
 
   const search = window.location.search;
   const params = new URLSearchParams(search);
   let name = params.get('name');
-  if (!name){
+  
+  if (editorMode) document.getElementById('editotModeText').style.display = 'flex';
+  if (editorMode) loadEditor();
+
+  const decodedCookies = decodeURIComponent(document.cookie).split('=')[1];
+  let cookieValues = JSON.parse(decodedCookies); 
+
+  choosenValues.name = cookieValues.name;
+  choosenValues.class = cookieValues.class ? cookieValues.class : 'dmg';
+  choosenValues.color = cookieValues.color ? cookieValues.color : getRandomColor();
+
+  if (!choosenValues.name){
     loadAssets(()=> {
       document.getElementById('loadingScreen').style.display = 'none';
       document.getElementById('enteringScreen').style.display = 'flex';
-      showNameSelectionScreen();
+      showClassSelectionScreen();
     })
   }else{
       loadAssets(() => {
-        choosenValues.name = name;
-        startGame();
+        loadMap()
       });
   }
 
 }
+async function loadMap(){
+  fetch('./maps/map.json')
+        .then(response => response.json())
+        .then(data => {
+          MAP = data;
+          startGame();
+        })
+        .catch(error => console.error('Error loading JSON:', error));
+}
+
+function showColorSelectionScreen(){
+  document.getElementById('enteringScreen_name').style.display = 'none';
+  document.getElementById('enteringScreen_class').style.display = 'none';
+  document.getElementById('enteringScreen_color').style.display = 'flex';
+
+  // display available colors
+  let colorsDiv = document.getElementById('enteringScreen_colors');
+  let colors;
+
+  switch (choosenValues.class){
+    case 'tank':
+      colors = ['#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff'];
+      break;
+    default:
+      colors = ['#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff'];
+      break;
+
+  }
+
+  let content = '';
+
+  for (let i = 0; i < colors.length; i++){
+    content+=`<div class='coloredTile' style='background-color: ${colors[i]}' data-color='${colors[i]}'></div>`
+  }
+
+  colorsDiv.innerHTML = content;
+
+
+}
+
 function showClassSelectionScreen(){
   document.getElementById('enteringScreen_name').style.display = 'none';
   document.getElementById('enteringScreen_class').style.display = 'flex';
@@ -444,7 +498,7 @@ function showNameSelectionScreen(){
 
 function disableEnteringScreen(){
   document.getElementById('enteringScreen').style.display = 'none';
-    startGame();
+    loadMap();
 }
 function drawPings(){
   let scaleDown = 2;
@@ -472,10 +526,11 @@ function drawStructures(){
   }
 }
 function updatePartiles(){
-  for (let i = 0; i < PARTICLES.length; i++){
+  for (let i = PARTICLES.length-1; i >= 0; i--){
     let p = PARTICLES[i];
-    p.draw();
+    if (!p) continue;
     p.update();
+    p.draw();
   }
 }
 function updatePlayers(socket){
@@ -505,6 +560,7 @@ function getPlayerInfo(pl){
     isDead: pl.isDead,
     kills: pl.kills,
     deaths: pl.deaths,
+    class: pl.class,
     pos: {
       x: pl.x,
       y: pl.y,
@@ -513,6 +569,15 @@ function getPlayerInfo(pl){
       x: pl.size.x,
       y: pl.size.y
     }
+  }
+}
+function drawCollisionBoxes(){
+  for (let i = 0; i < COLLISIONBOXES.length; i++){
+    let box = COLLISIONBOXES[i];
+    ctx.beginPath();
+    ctx.strokeStyle = 'yellow';
+    ctx.strokeRect(box.x - CAMERA.offset.x, box.y - CAMERA.offset.y, box.width, box.height);
+    ctx.closePath();
   }
 }
 function drawBlocks(){
@@ -597,6 +662,19 @@ window.addEventListener('unload', ()=>{
   if (GAME_STATE == 'game') createNotification(1, {playerName: player.name});
 });
 
+window.addEventListener('beforeunload' ,()=>{
+  const expirationDate = new Date();
+    expirationDate.setTime(expirationDate.getTime() + (24 * 60 * 60 * 1000));
+
+    // Convert the object to a JSON string
+    const jsonValue = JSON.stringify(choosenValues);
+
+    // Encode the name, value, and set the cookie
+    const cookieValue = encodeURIComponent('choosenValues') + "=" + encodeURIComponent(jsonValue) + "; expires=" + expirationDate.toUTCString() + "; path=/";
+
+    document.cookie = cookieValue;
+})
+
 document.addEventListener('keydown', (e) => {
   const key = e.key ? e.key.toLowerCase() : 0;
     if (pressedKeys['control'] && GAME_STATE == 'game') {
@@ -611,10 +689,14 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       toggleTab('on');
     }
+    if (key == 'escape'){
+      toggleEsc();
+    }
     
     pressedKeys[key] = 1;
 
 });
+
 
 document.addEventListener('keyup', (e) =>{
     const key = e.key ? e.key.toLowerCase() : 0;
@@ -636,20 +718,149 @@ document.addEventListener('mousemove', (e) => {
   mousePos.y =  e.clientY;
 });
 
-document.addEventListener('mousedown', (e) => {
+canvas.addEventListener('mousedown', (e) => {
   let x = e.clientX;
   let y = e.clientY;
-
   if (e.button == 0){
     if (player){
       let pos = {
         x: x + CAMERA.offset.x,
         y: y + CAMERA.offset.y
       }
-      if (pressedKeys['control']) player.tp(pos.x, pos.y);
-      else if (pressedKeys['shift']) pingNofity(pos.x,pos.y);
+      if (pressedKeys['control'] && isTpEnabled || pressedKeys['control'] && editorMode) player.tp(pos.x, pos.y);
+      if (pressedKeys['shift'] && !editorMode) pingNofity(pos.x,pos.y);
       else player.shooting = true;
     }
+  }
+  if (editorMode && !pressedKeys['control']){
+    let obj = getObjectByPos(x ,y);
+    let newPos = {
+      x: Math.floor((x + CAMERA.offset.x) / 50) * 50,
+      y: Math.floor((y + CAMERA.offset.y) / 50) * 50 
+    }
+    if (obj.i !== undefined && pressedKeys['shift']){
+      // remove tile
+      if (obj.mapObj.type !== 'tile' && obj.mapObj.type !== 'triggerBox') return
+      MAP.splice(obj.i, 1);
+      
+      console.log(obj.mapObj)
+      if (obj.mapObj.name == 'collisionBox'){
+        COLLISIONBOXES.splice(obj.triggerI, 1);
+      }
+
+      if (obj.tileI && obj.mapObj.type == 'tile') blocks.splice(obj.tileI, 1);
+    }else{
+      if (pressedKeys['shift']) return;
+      // place block
+      if (!selectedTile){
+        if (!triggerBoxSelected) return;
+
+        if (!triggerBoxData.start){
+          triggerBoxData.start = {x: newPos.x, y: newPos.y}
+        }else{
+          // just finish the selection
+          triggerBoxData.finish = {x: newPos.x, y: newPos.y}
+
+          if (triggerBoxData.start.x > triggerBoxData.finish.x){
+            let start = triggerBoxData.start.x;
+            triggerBoxData.start.x = triggerBoxData.finish.x;
+            triggerBoxData.finish.x = start;
+          }
+          if (triggerBoxData.start.y > triggerBoxData.finish.y){
+            let start = triggerBoxData.start.y;
+            triggerBoxData.start.y = triggerBoxData.finish.y;
+            triggerBoxData.finish.y = start;
+          }
+
+          // get the bottom of the tile
+          let width = triggerBoxData.finish.x - triggerBoxData.start.x + 50;
+          let height = triggerBoxData.finish.y - triggerBoxData.start.y + 50; 
+
+          let triggerBoxArea = {
+            type: 'triggerBox',
+            x: triggerBoxData.start.x,
+            y: triggerBoxData.start.y,
+            width: width,
+            height: height,
+            name: triggerBoxSelected 
+          }
+
+          MAP.push(triggerBoxArea);
+          COLLISIONBOXES.push(triggerBoxArea);
+
+          //reset the data
+          triggerBoxData = {};
+
+        }
+
+      }else{
+        let tileName = selectedTile;
+  
+  
+        let tile = {type: 'tile', x: newPos.x, y: newPos.y, name: tileName};
+        if (obj.i === undefined || obj.mapObj.name != tileName){
+          console.log('placed')
+          if (obj.i !== undefined){
+            MAP.splice(obj.i, 1);
+            if (obj.tileI && obj.mapObj.type == 'tile') blocks.splice(obj.tileI, 1);
+          }
+          MAP.push(tile);
+          new Tile(tile.x, tile.y, {x: 50, y: 50}, tileName);
+        }
+      }
+
+    }
+  }
+})
+
+function getObjectByPos(x, y){
+
+  let newPos = {
+    x: Math.floor((x + CAMERA.offset.x) / 50) * 50,
+    y: Math.floor((y + CAMERA.offset.y) / 50) * 50 
+  }
+  let blockData = {};
+  for (let i = 0; i < MAP.length; i++){
+    let m = MAP[i];
+    if (m.x == newPos.x && m.y == newPos.y){
+      if (MAP[i].type == 'triggerBox' && !triggerBoxSelected) continue;
+      blockData.i = i;
+      blockData.mapObj = MAP[i];
+    }
+  }
+  for (let i = 0; i < blocks.length; i++){
+    let m = blocks[i];
+    if (m.x == newPos.x && m.y == newPos.y){
+      blockData.tileI = i;
+      blockData.tile = MAP[i];
+    }
+  }
+  if (blockData.mapObj){
+    // check trigger boxes
+    if (blockData.mapObj.name == 'collisionBox'){
+      for (let i = 0; i < COLLISIONBOXES.length; i++){
+        let box = COLLISIONBOXES[i];
+        if (box.x == newPos.x && box.y == newPos.y){
+          blockData.triggerI = i;
+        }    
+      }
+    }
+  }
+
+  return blockData;
+}
+
+document.addEventListener('mousedown', (e) => {
+
+  if (e.target.id == 'goBackBtn'){
+    choosenValues.name = null;
+    choosenValues.class = null;
+    choosenValues.color = null;
+    location.reload();
+  }
+
+  if (e.target.id == 'saveMap_btn'){
+    saveAsJSON(MAP)
   }
 
   if (e.target.id == 'respawnBtn'){
@@ -659,6 +870,42 @@ document.addEventListener('mousedown', (e) => {
 
   if (e.target.className == 'btn'){
     loadedAudio['click'].play();
+  }
+
+  if(e.target.className == 'tileBtn'){
+    loadedAudio['click'].play();
+    let tile = e.target.dataset.name;
+    selectedTile = tile;
+    triggerBoxSelected = null;
+  }
+  if (e.target.className == 'clickableBox'){
+    loadedAudio['click'].play();
+    selectedTile = null;
+    triggerBoxSelected = e.target.id;
+  }
+  if (e.target.className == 'coloredTile'){
+    loadedAudio['click'].play();
+
+    let all_elems = document.querySelectorAll('.coloredTile');
+
+    let color = e.target.dataset.color;
+
+    if (e.target.dataset.selected === undefined){
+      //remove selected state
+      for (let i = 0; i < all_elems.length; i++){
+        let elem = all_elems[i];
+        elem.removeAttribute('data-selected');
+      }
+
+      e.target.dataset.selected = 'true';
+
+      choosenValues.color = color ? color : getRandomColor();
+
+    }else{
+      e.target.removeAttribute('data-selected');
+      delete choosenValues.color;
+    }
+
   }
 
   if (e.target.className == 'classSelectionBtn'){
@@ -692,23 +939,34 @@ document.addEventListener('mousedown', (e) => {
       <div>${classData.desc}</div>
       `;
 
-      let weapon = WEAPONS[classData.weaponId]; 
+      let weapon = WEAPONS[classData.weaponId];
+      let bullets = weapon.bulletAmmout ? weapon.bulletAmmout : DEFAULT_BULLET_AMMOUNT; 
 
       let stats = {
-        dmg: weapon.dmg !== undefined ? weapon.dmg : DEFAULT_WEAPON_DMG,
+        dmg: weapon.dmg !== undefined ? weapon.dmg*bullets : DEFAULT_WEAPON_DMG,
         heal: weapon.heal !== undefined ? weapon.heal : DEFAULT_WEAPON_HEAL,
         cooldown: weapon.cooldown ? weapon.cooldown : DEFAULT_WEAPON_COOLDOWN,
         drag: weapon.drag !== undefined ? weapon.drag : DEFAULT_WEAPON_DRAG,
         knockback: weapon.knockback !== undefined ? weapon.knockback : DEFAULT_WEAPON_KNOCKBACK,
       }
 
-      let dmgType = stats.dmg > 0 && stats.heal == 0 ? `<div class='colorRed'>DMG: ${stats.dmg}</div>` : `<div class='colorGreen'>HEAL: ${stats.heal}</div>`; 
+      let minDmgText = '';
 
+      if (bullets > 1) {
+        if (stats.dmg > 0){
+          minDmgText = stats.dmg / bullets + ' - '
+        }else{
+          minDmgText = stats.heal / bullets + ' - '
+        }
+      }
+      
+      let dmgType = stats.dmg > 0 && stats.heal == 0 ? `<div class='colorRed'>DMG: ${minDmgText} ${stats.dmg} </div>` : `<div class='colorGreen'>HEAL: ${minDmgText} ${stats.heal}</div>`; 
+      
       let loadOutContent = `
       <div style='width: 80px;'><img src='imgs/${weapon.imageName}.png' width='100%' height='100%' draggable='false' /></div>
       <div id='gunStats'>      
         ${dmgType}
-        <div>SPEED: ${stats.cooldown / 1000} / sec</div>
+        <div>SPEED: ${Math.floor(1000 / stats.cooldown * 10) / 10} / sec</div>
         <div>DRAG: ${stats.drag}</div>
         <div>KNOCKBACK: ${stats.knockback}</div>
       </div>
@@ -732,27 +990,22 @@ document.addEventListener('mousedown', (e) => {
     if (step === '0'){ // name selection
       let name = document.getElementById('playerNameInput').value;
       if (!name) name = playerNames[Math.floor(Math.random() * playerNames.length)];
-      
-      const searchParams = new URLSearchParams(window.location.search);
-
-      searchParams.set('name', name);
-      
-      const updatedSearchString = searchParams.toString();
-        
-      // Create a new URL with the updated search string
-      const newUrl = `${window.location.origin}${window.location.pathname}?${updatedSearchString}`;
-        
-      // Update the browser history without reloading the page
-      window.history.pushState({ path: newUrl }, '', newUrl);
 
       choosenValues['name'] = name;     
 
+
       showClassSelectionScreen();
+    }
+    if (step === '1'){
+      showColorSelectionScreen();
     }
   }
 
 
   if (e.target.id == 'playBtn'){
+    if (!choosenValues.name) choosenValues.name = playerNames[Math.floor(Math.random() * playerNames.length)];
+    if (!choosenValues.class) choosenValues.class = 'dmg';
+    if (!choosenValues.color) choosenValues.color = getRandomColor()
     disableEnteringScreen();
   }
 });
@@ -963,8 +1216,8 @@ function updateTabContent(){
   if (tabMainDiv.style.display !== 'flex') return;
   if (Date.now() - tabLastUpdateTime < tabUpdateCooldown) return; 
   tabLastUpdateTime = Date.now();
-
-  players.sort((p1, p2) => p1.kills - p2.kills);
+  
+  players.sort((p1, p2) => p1.values.kills - p2.values.kills);
 
   let blueTeamDiv = document.getElementById('blueTeam');
   let redTeamDiv = document.getElementById('redTeam');
@@ -1001,8 +1254,26 @@ function updateTabContent(){
   redTeamDiv.innerHTML = redContent;
 
 }
+function toggleEsc(){
+  let escDiv = document.getElementById('escapeScreen');
+  let display = escDiv.style.display == 'none' || !escDiv.style.display ? 'flex' : 'none';
+  escDiv.style.display = display;
+}
 function toggleTab(state){
   let tabDiv = document.getElementById('tabScreen');
   let display = state == 'on' ? 'flex' : 'none';
   tabDiv.style.display = display;
+}
+function saveAsJSON(data) {
+  const jsonContent = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json' });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'map.json';
+
+  // Append the link to the body, click it, and remove it
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }

@@ -12,6 +12,7 @@ class CharacterEntity{
     }
     drawWeapon() {
         // ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (editorMode) return;
         this.gunImage = WEAPONS[this.weaponId].img;
         if (!this.gunImage) return;
         let pos = {
@@ -38,6 +39,7 @@ class CharacterEntity{
         // ctx.fillText(Math.floor(degrees), this.x, this.y - 20);
     }
     shoot(){
+        if (editorMode) return;
         if (GAME_STATE != 'game' || this.isDead) return;
 
         let weaponDrag = WEAPONS[this.weaponId].drag !== undefined ? WEAPONS[this.weaponId].drag : DEFAULT_WEAPON_DRAG; 
@@ -46,7 +48,7 @@ class CharacterEntity{
 
         if (now - this.lastShoot < cooldown) return;
 
-        let bulletSpeed = 10; 
+        let bulletSpeed = WEAPONS[this.weaponId].bulletSpeed ? WEAPONS[this.weaponId].bulletSpeed : DEFAULT_BULLET_SPEED; 
         let gunPos = {
             x: this.x + this.size.x / 2,
             y: this.y + this.size.y / 2.5
@@ -61,10 +63,28 @@ class CharacterEntity{
 
         new Particle(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , vector, bulletSpeed, this.socketId, this.weaponId);
         shootBullet(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , vector, bulletSpeed, this.weaponId);
+        
+        if (this.weapon.bulletAmmout){
+            const sideSpread = Math.PI / 10;
+            for (let i = 1; i <= this.weapon.bulletAmmout - 1; i++){
+                const sideAngle = angle + (i % 2 === 0 ? 0.5 : -1) * (i / 2) * sideSpread;
+                let sideVector = {
+                    x: Math.cos(sideAngle),
+                    y: Math.sin(sideAngle)
+                }
+
+                new Particle(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , sideVector, bulletSpeed, this.socketId, this.weaponId, true);
+                shootBullet(this.x + this.size.x / 2, this.y - 12 + this.size.y / 2 , sideVector, bulletSpeed, this.weaponId, true);            
+            }
+        }
+
         this.lastShoot = Date.now();
+    
+        
     }
     drawHpBar(){
         // background bar
+        if (editorMode) return;
         let pos = {
             x: this.x - CAMERA.offset.x,
             y: this.y - CAMERA.offset.y
@@ -83,12 +103,18 @@ class CharacterEntity{
         ctx.closePath();
     }
     dealDmg(amm, data){
-        if (this.godMode) return;
+        if (this.godMode || editorMode) return;
         this.hp -= amm;
         if (this.hp < 0) this.hp = 0;
         if (this.hp > this.maxHp) this.hp = this.maxHp;
         
         if (this.hp == 0) this.kill(data);
+    }
+    constantHeal(){
+        if (!this.lastHealed || Date.now() - this.lastHealed > 1000){
+            this.dealDmg(-0.5);
+            this.lastHealed = Date.now();
+        }
     }
     draw(){
         if (this.isDead) return;

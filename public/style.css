@@ -18,10 +18,41 @@ body{
     gap: 20px;
     color: white;
 }
+#enteringScreen_name{
+    width: 40vw;
+    min-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#enteringScreen_color{
+    width: 600px;
+    justify-content: center;
+    align-items: center;
+}
+#enteringScreen_colors{
+    display: grid;
+    grid-template-columns: auto auto auto;
+    width: fit-content;
+    gap: 15px;
+}
+.coloredTile{
+    width: 12vw;
+    height: 12vw;
+    max-width: 170px;
+    max-height: 170px;
+    cursor: pointer;
+}
+.coloredTile:hover{
+    outline: 2px solid white;
+}
+.coloredTile[data-selected='true']{
+    outline: 4px solid white;
+}
 #gameTitle{
     position: absolute;
     top: 10vh;
-    font-size: 5vw;
+    font-size: clamp(15px, 5vw, 70px);
     text-transform: uppercase;
 }
 #inputs{
@@ -30,12 +61,12 @@ body{
     border: 2px solid white;
     padding: 20px;
     text-align: center;
-    width: 40vw;
+    width: 100%;
     font-size: 35px;
     text-transform: uppercase;
 }
 #playerNameInput{
-    width: 20vw;
+    width: 80%;
     height: 50px;
     margin: auto;
     font-size: 30px;
@@ -55,7 +86,16 @@ body{
     font-size: 40px;
     text-align: center;
     text-transform: uppercase;
-
+    pointer-events: all;
+}
+#escapeScreen{
+    background-color: #00000096;
+    flex-direction: column;
+    /* display: flex; */
+}
+#goBackBtn{
+    font-size: 25px;
+    min-width: 500px;
 }
 .btn:hover{
     background-color: white;
@@ -184,6 +224,7 @@ body{
     flex-direction: column;
     gap: 10px;
     user-select: none;
+    pointer-events: none;
 }
 .notification{
     background-color: #000000c4;
@@ -194,6 +235,7 @@ body{
     justify-content: center;
     align-items: center;
     gap: 10px;
+    pointer-events: none;
 }
 .notification[data-special='true']{
     outline: 2px solid gold;
@@ -228,6 +270,7 @@ body{
     color: white;
     font-size: 4vw;
     user-select: none;
+    pointer-events: none;
 }
 #tabScreen{
     position: fixed;
@@ -239,6 +282,7 @@ body{
     justify-content: center;
     align-items: center;
     z-index: 5;
+    pointer-events: none;
 }
 #tabTable{
     color: white;
@@ -256,6 +300,7 @@ body{
     flex-direction: column;
     height: 100%;
     margin-top: 10px;
+    pointer-events: none;
 }
 .tabSection{
     border-left: 2px solid red;
@@ -280,6 +325,7 @@ body{
     align-items: center;
     gap: 10px;
     margin-left: 10px;
+    pointer-events: all;
 }
 .tabCell{
     border-right: 2px solid white;
@@ -306,4 +352,63 @@ body{
 }
 .tab_player_class{
     width: 75px;
+}
+#editotModeText{
+    position: fixed;
+    width: 100%;
+    top: 0px;
+    left: 0px;
+    font-size: 35px;
+    color: white;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+.tileBtn{
+    width: 50px;
+    height: 50px;
+    pointer-events: all;
+    cursor: pointer;
+}
+.tileBtn > img {
+    pointer-events: none;
+}
+.tileBtn:hover{
+    outline: 2px solid white;
+}
+#tileImages{
+    background-color: #000000c7;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 10px;
+}
+.clickableBox{
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    pointer-events: all;
+}
+.clickableBox:hover{
+    outline: 2px solid white;
+}
+#triggerBoxes{
+    background-color: #000000c7;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 10px;    
+}
+#collisionBox{
+    border: 2px solid yellow;
+}
+#triggerBox{
+    border: 2px solid green;
+}
+#killerBox{
+    border: 2px solid red;
 }
