@@ -9,7 +9,6 @@ class Tile{
         if (type == 0) this.image = loadedImgs[imageName];
         else this.color = imageName;
         if (this.color == 'rgba(0, 0, 0, 0)'){
-            console.log(this);
             let data = {
                 type: 'triggerBox',
                 x: x,
@@ -63,13 +62,14 @@ class Block extends Tile{
     }
 }
 class killerBox{
-    constructor(x, y, width, height){
-        this.x = x;
-        this.y = y;
+    constructor(data){
+        this.x = data.x;
+        this.y = data.y;
         this.size = {
-            x: width,
-            y: height
+            x: data.width,
+            y: data.height
         }
+        KILLERBOXES.push(this);
     }
     update(){
         let playerRect = getSolidRect(player);
@@ -78,11 +78,55 @@ class killerBox{
         let collision = rectCollision(playerRect, stRect);
 
         if (collision){
-            player.dealDmg(100);
+            player.dealDmg(100, {object: 'spike'});
         }
     }
     draw(){
         if (!editorMode) return;
-        
+        ctx.beginPath();
+        ctx.strokeStyle = 'red';
+        ctx.strokeRect(this.x - CAMERA.offset.x, this.y - CAMERA.offset.y, this.size.x, this.size.y);
+        ctx.closePath();   
+    }
+}
+class actionBox{
+    constructor(data){
+        this.x = data.x;
+        this.y = data.y;
+        this.size = {
+            x: data.width,
+            y: data.height
+        }
+        ACTIONBOXES.push(this);
+        this.lastTimeAdded = Date.now();
+        this.stopedColliding = false;
+    }
+    update(){
+        let playerRect = getSolidRect(player);
+        let stRect = getSolidRect(this);
+
+        let collision = rectCollision(playerRect, stRect);
+
+        if (collision){
+            if (this.stopedColliding) this.lastTimeAdded = Date.now();
+            this.stopedColliding = false;
+            // player.dealDmg(100, {object: 'spike'});
+            // add player to list of players on the point
+            // check if point is cotensted if not add points every second to take the point
+            if (Date.now() - this.lastTimeAdded > 500){
+                player.addPoint();
+                this.lastTimeAdded = Date.now();
+            }            
+
+        }else{
+            this.stopedColliding = true;
+        }      
+    }
+    draw(){
+        if (!editorMode) return;
+        ctx.beginPath();
+        ctx.strokeStyle = 'green';
+        ctx.strokeRect(this.x - CAMERA.offset.x, this.y - CAMERA.offset.y, this.size.x, this.size.y);
+        ctx.closePath();   
     }
 }

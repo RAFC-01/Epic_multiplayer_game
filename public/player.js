@@ -20,7 +20,7 @@ class Player extends CharacterEntity{
         this.weaponId = classesInfo[this.class].weaponId;
         this.remainder = {x: 0, y: 0};
         this.runAcceleration = 10;
-        this.runSpeed = this.class == 'heal' ? 6 : 4;
+        this.runSpeed = this.class == 'heal' ? 5 : 4;
         this.runReduce = 22; 
         this.flyReduce = 12;    
         this.fallSpeed = 5.6;
@@ -29,6 +29,7 @@ class Player extends CharacterEntity{
         this.jumpSpeed = this.class == 'heal' ? -7 : -5;
         this.killStreak = 0;
         this.godMode = false;
+        this.team = 'blue';
 
         this.changeWeapon(this.weaponId);
 

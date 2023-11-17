@@ -131,6 +131,7 @@ class CharacterEntity{
         // text
         ctx.beginPath();
         ctx.font = '20px Arial';
+        ctx.fillStyle = this.team;
         let text = this.display;
         let textWidth = ctx.measureText(text).width;
         ctx.fillText(text, pos.x + (this.size.x - textWidth) / 2, pos.y - 5);        
@@ -170,7 +171,11 @@ class CharacterEntity{
     }
     respawn(){
         this.hp = this.maxHp;
-        this.tp(spawnPoint.x, spawnPoint.y);
+        let spawn = {
+            x: this.team == 'blue' ? spawnPointBlue.x : spawnPointRed.x,
+            y: this.team == 'blue' ? spawnPointBlue.y : spawnPointRed.y 
+        }
+        this.tp(spawn.x, spawn.y);
         document.getElementById('deathScreen').style.display = 'none';        
         setTimeout(()=> {
             this.isDead = false;
@@ -203,5 +208,23 @@ class CharacterEntity{
         if (this.isDead) return;
         if (Math.abs(this.vel.x) < Math.abs(x) * 3) this.vel.x += x;
         if (Math.abs(this.vel.y) < Math.abs(y) * 3) this.vel.y += y;
+    }
+    addPoint(){
+        if (this.team == 'red') teamPoints.red++;
+        else teamPoints.blue++;
+
+        if (teamPoints.red > 99) {
+            teamPoints.fullRed++;
+            teamPoints.red = 0;
+            bigMessage(1, 'red');
+        }
+
+        if (teamPoints.blue > 99) {
+            teamPoints.fullBlue++;
+            teamPoints.blue = 0;
+            bigMessage(1, 'blue');
+        }
+
+        updatePointsUI();
     }
 }

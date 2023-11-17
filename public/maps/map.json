@@ -1459,7 +1459,8 @@
     "y": 600,
     "width": 100,
     "height": 100,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1467,7 +1468,8 @@
     "y": 300,
     "width": 300,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1475,7 +1477,8 @@
     "y": 650,
     "width": 300,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1483,7 +1486,8 @@
     "y": 600,
     "width": 100,
     "height": 100,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1491,7 +1495,8 @@
     "y": 500,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1499,7 +1504,8 @@
     "y": 600,
     "width": 50,
     "height": 100,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1507,7 +1513,8 @@
     "y": 650,
     "width": 800,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1515,7 +1522,8 @@
     "y": 600,
     "width": 600,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1523,7 +1531,8 @@
     "y": 550,
     "width": 400,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1531,7 +1540,8 @@
     "y": 300,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1539,7 +1549,8 @@
     "y": 250,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1547,7 +1558,8 @@
     "y": 200,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1555,7 +1567,8 @@
     "y": 150,
     "width": 200,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1563,7 +1576,8 @@
     "y": 200,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1571,7 +1585,8 @@
     "y": 250,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1579,7 +1594,8 @@
     "y": 300,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1587,7 +1603,8 @@
     "y": 600,
     "width": 50,
     "height": 100,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1595,7 +1612,8 @@
     "y": 500,
     "width": 100,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1603,7 +1621,8 @@
     "y": 600,
     "width": 100,
     "height": 100,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1611,7 +1630,8 @@
     "y": 650,
     "width": 300,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1619,7 +1639,8 @@
     "y": 600,
     "width": 100,
     "height": 100,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
   },
   {
     "type": "triggerBox",
@@ -1627,6 +1648,285 @@
     "y": 300,
     "width": 300,
     "height": 50,
-    "name": "collisionBox"
+    "name": "collisionBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 400,
+    "y": 650,
+    "width": 150,
+    "height": 50,
+    "name": "killerBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 4250,
+    "y": 650,
+    "width": 150,
+    "height": 50,
+    "name": "killerBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 2750,
+    "y": 650,
+    "width": 250,
+    "height": 50,
+    "name": "killerBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 1700,
+    "y": 650,
+    "width": 250,
+    "height": 50,
+    "name": "killerBox",
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 300,
+    "y": 250,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 300,
+    "y": 200,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 300,
+    "y": 150,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 300,
+    "y": 100,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 300,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 250,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 200,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 150,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 50,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 0,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 100,
+    "y": 50,
+    "name": "blueBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 0,
+    "y": 50,
+    "width": 350,
+    "height": 50,
+    "name": "collisionBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 300,
+    "y": 50,
+    "width": 50,
+    "height": 300,
+    "name": "collisionBox",
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4450,
+    "y": 250,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4450,
+    "y": 200,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4450,
+    "y": 150,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4450,
+    "y": 100,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4450,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4500,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4550,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4600,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4650,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4700,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "tile",
+    "x": 4750,
+    "y": 50,
+    "name": "redBox",
+    "width": 50,
+    "height": 50,
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 4450,
+    "y": 50,
+    "width": 350,
+    "height": 50,
+    "name": "collisionBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 4450,
+    "y": 50,
+    "width": 50,
+    "height": 300,
+    "name": "collisionBox",
+    "color": "red"
+  },
+  {
+    "type": "triggerBox",
+    "x": 2200,
+    "y": 300,
+    "width": 300,
+    "height": 250,
+    "name": "actionBox"
   }
 ]

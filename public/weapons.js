@@ -8,7 +8,7 @@ const DEFAULT_WEAPON_DMG = 1;
 const DEFAULT_WEAPON_HEAL = 0;
 const DEFAULT_WEAPON_COOLDOWN = 400; // ms
 const DEFAULT_WEAPON_TRAIL_STATE = true;
-const DEFAULT_WEAPON_DRAG = 2;
+const DEFAULT_WEAPON_DRAG = 1;
 const DEFAULT_BULLET_AMMOUNT = 1;
 const DEFAULT_BULLET_SPEED = 10;
 const DEFAULT_WEAPON_KNOCKBACK = 3;
@@ -18,7 +18,9 @@ const WEAPONS = {
         name: 'ak47',
         imageName: 'gun',
         soundName: 'gun_shot',
-        cooldown: 350,
+        cooldown: 300,
+        maxDistance: 1500,
+        hasTrail: false
     },
     3: {
         name: 'ak47-asimov',
@@ -39,16 +41,16 @@ const WEAPONS = {
         drag: 1,
         cooldown: 333,
         knockback: 0,
-        bulletSpeed: 0.5,
-        bulletSize: 5,
+        bulletSpeed: 1.5,
+        bulletSize: 6,
         color:  {r: 10, g: 255, b: 10},
-        maxDistance: 250,
+        maxDistance: 550,
         hasTrail: false
     },
     5: {
         name: 'shot-gun',
         imageName: 'shot_gun',
-        dmg: 2,
+        dmg: 1,
         leastDmg: 1,
         knockback: 4,
         drag: 3,
@@ -109,7 +111,7 @@ class Particle{
         }
         if (this.hasTrail){
             let trailSize = this.size-1 > 0 ? this.size-1 : this.size;
-            for (let i = 0; i < this.trail.length; i++){
+            for (let i = this.trail.length-1; i >= 0; i--){
                 let t = this.trail[i];
                 let orginA = this.color.a ? this.color.a : 1;
                 let alpha = orginA - i / this.trail.length;
@@ -144,6 +146,7 @@ class Particle{
                 return;
             } 
             let alpha = 1 - dist / this.maxDistance;
+            alpha = 1;
             this.color.a = alpha;
         }
 
@@ -170,9 +173,17 @@ class Particle{
                 collision = {target: players[i].id};
             }
         }
-        for (let i = 0; i < blocks.length; i++){
-            let block = blocks[i];
-            let blockRect = getSolidRect(block);
+        for (let i = 0; i < COLLISIONBOXES.length; i++){
+            let block = COLLISIONBOXES[i];
+            let blockData = {
+                x: block.x,
+                y: block.y,
+                size: {
+                    x: block.width,
+                    y: block.height
+                }
+            }
+            let blockRect = getSolidRect(blockData);
             if (pointInRect(point, blockRect)){
                 collision = true;
             }

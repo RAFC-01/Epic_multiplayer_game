@@ -17,6 +17,7 @@ body{
     flex-direction: column;
     gap: 20px;
     color: white;
+    user-select: none;
 }
 #enteringScreen_name{
     width: 40vw;
@@ -406,9 +407,49 @@ body{
 #collisionBox{
     border: 2px solid yellow;
 }
-#triggerBox{
+#actionBox{
     border: 2px solid green;
 }
 #killerBox{
     border: 2px solid red;
+}
+#teamsUI{
+    position: fixed;
+    top: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+.teamProgressBar{
+    background-color: black;
+    width: 25vw;
+    height: 30px;
+    overflow: hidden;
+}
+#teamBlueProgress > div{
+    background-color: blue;
+    width: 100%;
+    height: 100%;
+    transform: translateX(100.5%);
+}
+#teamRedProgress > div{
+    background-color: red;
+    width: 100%;
+    height: 100%;
+    transform: translateX(-100.5%);
+    overflow: hidden;
+}
+#teamPoints{
+    width: fit-content;
+    font-size: 40px;
+    display: flex;
+    gap: 15px;
+    font-weight: bold;
+}
+#teamBluePoints{
+    color: blue;
+}
+#teamRedPoints{
+    color: red;
 }

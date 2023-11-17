@@ -17,7 +17,17 @@ const friction = 0.8;
 const STRUCTURES = [];
 const SPECIAL_PARTICLES = [];
 const TILES = [];
+
 const COLLISIONBOXES = [];
+const KILLERBOXES = [];
+const ACTIONBOXES = [];
+
+const teamPoints = {
+  red: 0,
+  blue: 0,
+  fullRed: 0,
+  fullBlue: 0
+}
 
 const classesInfo = {
   'tank':{
@@ -41,8 +51,8 @@ const classesInfo = {
 }
 
 let timeMultiplier = 1;
-let isTpEnabled = false;
-let editorMode = true;
+let isTpEnabled = true;
+let editorMode = false;
 let selectedTile = 'box';
 let triggerBoxSelected = null;
 let triggerBoxData = {};
@@ -58,7 +68,9 @@ document.body.appendChild( stats.dom );
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-let spawnPoint = {x: 100, y: floor_level - 250};
+let spawnPointBlue = {x: 100, y: floor_level - 250};
+let spawnPointRed = {x: 4700, y: floor_level - 250};
+
 let MAP_SIZE = {x: 0, y: 0};
 
 let player;
@@ -73,6 +85,7 @@ let shootSpecial;
 let makeSpectate;
 let sendNotification;
 let sendBigMessage;
+let sendUpdatePoints;
 let pingLifeSpan = 1;
 
 let pingTypes = {
@@ -152,7 +165,7 @@ function startGame(){
   initializePingAudio();  
   createWeaponImgs();
   document.getElementById('tab_playerName').innerHTML = choosenValues.name;
-  player = new Player(spawnPoint.x, spawnPoint.y, choosenValues);
+  player = new Player(spawnPointBlue.x, spawnPointBlue.y, choosenValues);
   CAMERA = new Camera();
 
   // createNotification(1, {playerName: name});
@@ -184,6 +197,8 @@ function startGame(){
       drawBlocks();
       drawTiles();
       drawStructures();
+      updateKillerBoxes();
+      updateActionBoxes();
       updatePlayers(socket);
       updatePartiles();
       updateSpecialPartiles();
@@ -324,6 +339,19 @@ function startGame(){
     sendBigMessage = (type, player) => {
       socket.emit('bigMessage', {type, player});
     }
+
+    socket.on('reciveUpdatePoints', (data) => {
+      teamPoints.blue = data.blue;
+      teamPoints.red = data.red;
+      teamPoints.fullBlue = data.fullBlue;
+      teamPoints.fullRed = data.fullRed;
+
+      updatePointsUI(false);
+    });
+
+    sendUpdatePoints = () => {
+      socket.emit('updatePoints' , teamPoints);
+    }
     GAME_STATE = 'game';
 
     createNotification(0, {playerName: choosenValues.name});
@@ -384,6 +412,12 @@ function drawMap(){
       if (data.name == 'collisionBox'){
         COLLISIONBOXES.push(data);
       }
+      if (data.name == 'killerBox'){
+        new killerBox(data);
+      }
+      if (data.name == 'actionBox'){
+        new actionBox(data);
+      }
     }
   }
 
@@ -428,7 +462,8 @@ window.onload = () => {
   if (editorMode) document.getElementById('editotModeText').style.display = 'flex';
   if (editorMode) loadEditor();
 
-  const decodedCookies = decodeURIComponent(document.cookie).split('=')[1];
+  const decodedCookies = decodeURIComponent(document.cookie).split('choosenValues=')[1];
+  console.log(decodedCookies);
   let cookieValues = JSON.parse(decodedCookies); 
 
   choosenValues.name = cookieValues.name;
@@ -439,7 +474,7 @@ window.onload = () => {
     loadAssets(()=> {
       document.getElementById('loadingScreen').style.display = 'none';
       document.getElementById('enteringScreen').style.display = 'flex';
-      showClassSelectionScreen();
+      showNameSelectionScreen();
     })
   }else{
       loadAssets(() => {
@@ -469,10 +504,13 @@ function showColorSelectionScreen(){
 
   switch (choosenValues.class){
     case 'tank':
-      colors = ['#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff'];
+      colors = ['#2542a3', '#2196F3', '#009688', '#9E9E9E', '#6f6f6f', '#393939'];
+      break;
+    case 'dmg':
+      colors = ['#ffeb3b', '#ff9800', '#f44336', '#b50404', '#cb2626', '#673ab7']
       break;
     default:
-      colors = ['#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff', '#ff00ff'];
+      colors = ['#ff00ff', '#eb5ceb', '#ff96ff', '#52e32b', '#7bed5d', '#9ef388'];
       break;
 
   }
@@ -519,6 +557,38 @@ function drawPings(){
     }
   }
 }
+function updatePointsUI(broadcast = true){
+  let redTeam = document.querySelector('#teamRedProgress > div');
+  let blueTeam = document.querySelector('#teamBlueProgress > div');
+  let redTeamNumber = document.getElementById('teamRedPoints')
+  let blueTeamNumber = document.getElementById('teamBluePoints')
+
+  let redProcentage = -1 * (100 - teamPoints.red) == -100 ? -100.5 : -1 * (100 - teamPoints.red);
+  let blueProcentage = 100 - teamPoints.blue == 100 ? 100.5 : 100 - teamPoints.blue;
+  
+
+  redTeam.style.transform = `translateX(${redProcentage}%)`;
+  blueTeam.style.transform = `translateX(${blueProcentage}%)`;
+
+  redTeamNumber.innerText = teamPoints.fullRed;
+  blueTeamNumber.innerText = teamPoints.fullBlue;
+
+  if (broadcast) sendUpdatePoints();
+}
+function updateKillerBoxes(){
+  for (let i = 0; i < KILLERBOXES.length; i++){
+    let box = KILLERBOXES[i];
+    box.update();
+    box.draw();
+  }
+}
+function updateActionBoxes(){
+  for (let i = 0; i < ACTIONBOXES.length; i++){
+    let box = ACTIONBOXES[i];
+    box.update();
+    box.draw();
+  }  
+}
 function drawStructures(){
   for (let i = 0; i < STRUCTURES.length; i++){
     STRUCTURES[i].draw();
@@ -561,6 +631,7 @@ function getPlayerInfo(pl){
     kills: pl.kills,
     deaths: pl.deaths,
     class: pl.class,
+    team: pl.team,
     pos: {
       x: pl.x,
       y: pl.y,
@@ -747,6 +818,12 @@ canvas.addEventListener('mousedown', (e) => {
       if (obj.mapObj.name == 'collisionBox'){
         COLLISIONBOXES.splice(obj.triggerI, 1);
       }
+      if (obj.mapObj.name == 'killerBox'){
+        KILLERBOXES.splice(obj.triggerI, 1);
+      }
+      if (obj.mapObj.name == 'actionBox'){
+        ACTIONBOXES.splice(obj.triggerI, 1);
+      }
 
       if (obj.tileI && obj.mapObj.type == 'tile') blocks.splice(obj.tileI, 1);
     }else{
@@ -786,7 +863,9 @@ canvas.addEventListener('mousedown', (e) => {
           }
 
           MAP.push(triggerBoxArea);
-          COLLISIONBOXES.push(triggerBoxArea);
+          if (triggerBoxSelected == 'collisionBox') COLLISIONBOXES.push(triggerBoxArea);
+          if (triggerBoxSelected == 'killerBox') new killerBox(triggerBoxArea);
+          if (triggerBoxSelected == 'actionBox') new actionBox(triggerBoxArea); 
 
           //reset the data
           triggerBoxData = {};
@@ -837,14 +916,14 @@ function getObjectByPos(x, y){
   }
   if (blockData.mapObj){
     // check trigger boxes
-    if (blockData.mapObj.name == 'collisionBox'){
+    if (blockData.mapObj.type == 'triggerBox'){
       for (let i = 0; i < COLLISIONBOXES.length; i++){
         let box = COLLISIONBOXES[i];
         if (box.x == newPos.x && box.y == newPos.y){
           blockData.triggerI = i;
         }    
       }
-    }
+    }    
   }
 
   return blockData;
@@ -1070,7 +1149,7 @@ class Camera{
     let normalizedDistanceX = clampedDistanceX / (innerWidth / 2);
     let lerpFactor = this.minLerpFactor + normalizedDistanceX * (this.maxLerpFactor - this.minLerpFactor)
 
-    this.offset.x = lerp(this.offset.x, x - innerWidth / 2, lerpFactor);
+    this.offset.x = lerp(this.offset.x, x - innerWidth / 2, lerpFactor * dt * DELTA_SPEED_CORRECTION);
     // if (this.offset.x < innerWidth / 2) this.offset.x = 0;
     // if (this.offset.x+10 > MAP_SIZE.x - innerWidth / 2) this.offset.x = MAP_SIZE.x - innerWidth - 10;
     if (this.offset.x < 0)  this.offset.x = 0;
@@ -1196,6 +1275,9 @@ function bigMessage(type, playerName, broadcast = true){
       loadedAudio['5_kills'].volume(0.05);
       loadedAudio['5_kills'].play();
     }
+  }
+  if (type === 1){
+    messageDiv.innerHTML = `<span class='colorYellow'>Team <b style='color: ${playerName};'>${playerName}</b> gets a point!</span>`
   }
 
   setTimeout(()=>{

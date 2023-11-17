@@ -66,6 +66,10 @@ io.on('connection', client => {
     client.broadcast.emit('reciveBigMessage', data);
   })
 
+  client.on('updatePoints', (data) => {
+    client.broadcast.emit('reciveUpdatePoints', data);
+  })
+
   client.on('disconnect', () => {
     console.log('user disconnected');
     let player = getPlayerById(client.id);
