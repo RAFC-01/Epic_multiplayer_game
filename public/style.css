@@ -426,6 +426,7 @@ body{
     width: 25vw;
     height: 30px;
     overflow: hidden;
+    outline: 2px solid white;
 }
 #teamBlueProgress > div{
     background-color: blue;

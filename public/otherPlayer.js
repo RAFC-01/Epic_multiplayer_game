@@ -11,6 +11,7 @@ class OtherPlayer extends CharacterEntity{
         this.maxHp = data.maxHp;
         this.isDead = data.isDead;
         this.weaponId = data.weaponId;
+        this.team = data.team;
         this.weapon = WEAPONS[this.weaponId];
         this.weaponAngle = data.weaponAngle;
         this.weaponDegrees = data.weaponDegrees;

@@ -11,11 +11,28 @@ const io = require('socket.io')(server, {
 
 let playerList = [];
 
+let playerInTeams = {
+  red: 0,
+  blue: 0
+}
+
 io.on('connection', client => {
   console.log('user connected '+client.id);
   playerList.push({
     id: client.id,
   })
+
+  if (playerInTeams.red < playerInTeams.blue){
+    playerInTeams.red++;
+    // join red
+    client.team = 'red';
+  }else{
+    playerInTeams.blue++;
+    // join blue
+    client.team = 'blue';
+  }
+
+  client.emit('setPlayerTeam', client.team);
 
   client.on('update', (values) => {
     let read = editPlayerWithId(client.id, values);
@@ -74,6 +91,10 @@ io.on('connection', client => {
     console.log('user disconnected');
     let player = getPlayerById(client.id);
     if (player) playerList.splice(playerList.indexOf(player), 1);
+
+    if (client.team == 'red') playerInTeams.red--;
+    else playerInTeams.blue--;
+
     io.emit('removePlayer', client.id);
   })
 })

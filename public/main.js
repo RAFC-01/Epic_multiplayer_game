@@ -180,6 +180,14 @@ function startGame(){
     });
     socket.username = name ? name : socket.id;
 
+    socket.on('setPlayerTeam' , team => {
+      player.team = team;
+      if (team == 'red') {
+        player.x = spawnPointRed.x;
+        player.y = spawnPointRed.y;
+      }
+    })
+
     function animate(){
       if (!socket) return;
       stats.begin();
