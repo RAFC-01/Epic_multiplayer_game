@@ -1,3 +1,4 @@
 ngrok_config.js
+package-lock.json
 /node_modules
 /public/libs
