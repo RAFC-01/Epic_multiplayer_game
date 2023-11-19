@@ -51,7 +51,7 @@ const classesInfo = {
 }
 
 let timeMultiplier = 1;
-let isTpEnabled = true;
+let isTpEnabled = false;
 let editorMode = false;
 let selectedTile = 'box';
 let triggerBoxSelected = null;
@@ -462,21 +462,26 @@ function loadEditor(){
 }
 
 window.onload = () => {
-
-  const search = window.location.search;
-  const params = new URLSearchParams(search);
-  let name = params.get('name');
   
   if (editorMode) document.getElementById('editotModeText').style.display = 'flex';
   if (editorMode) loadEditor();
 
   const decodedCookies = decodeURIComponent(document.cookie).split('choosenValues=')[1];
   console.log(decodedCookies);
-  let cookieValues = JSON.parse(decodedCookies); 
+  let cookieValues;
+  if (!decodedCookies){
+    choosenValues.name = 'unknown';
+    choosenValues.class = 'dmg';
+    choosenValues.color = getRandomColor();  
+  }else{
 
-  choosenValues.name = cookieValues.name;
-  choosenValues.class = cookieValues.class ? cookieValues.class : 'dmg';
-  choosenValues.color = cookieValues.color ? cookieValues.color : getRandomColor();
+    cookieValues = JSON.parse(decodedCookies); 
+    choosenValues.name = cookieValues.name;
+    choosenValues.class = cookieValues.class ? cookieValues.class : 'dmg';
+    choosenValues.color = cookieValues.color ? cookieValues.color : getRandomColor();
+  
+  }
+
 
   if (!choosenValues.name){
     loadAssets(()=> {
